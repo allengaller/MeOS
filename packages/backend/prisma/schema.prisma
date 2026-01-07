@@ -1,0 +1,149 @@
+// Prisma Schema for MeOS
+// 人生管理系统数据模型
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./meos.db"
+}
+
+// ==================== 用户模型 ====================
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String   // bcrypt hashed
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 关联关系
+  domains            Domain[]
+  balanceWheelScores BalanceWheelScore[]
+  reflections        Reflection[]
+  reviews            PeriodicReview[]
+  insights           InsightNote[]
+}
+
+// ==================== 领域模型 ====================
+
+model Domain {
+  id          String   @id @default(uuid())
+  userId      String
+  identifier  String   // Career, Health, Family, Finance, Learning, Social, Leisure, Spirituality
+  name        String   // 可自定义名称
+  icon        String?  // 图标emoji或图片URL
+  weight      Int      @default(1) // 重要性权重 1-10
+  description String?
+  order       Int      @default(0) // 显示顺序
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 关联关系
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balanceWheelScores BalanceWheelScore[]
+  reflections        Reflection[]
+
+  @@unique([userId, identifier])
+  @@index([userId])
+}
+
+// ==================== 生活平衡轮数据 ====================
+
+model BalanceWheelScore {
+  id        String   @id @default(uuid())
+  userId    String
+  domainId  String
+  score     Int      // 1-10 分
+  note      String?  // 评分说明
+  createdAt DateTime @default(now())
+
+  // 关联关系
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  domain Domain @relation(fields: [domainId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([domainId])
+}
+
+// ==================== 反思记录 ====================
+
+model Reflection {
+  id        String   @id @default(uuid())
+  userId    String
+  date      DateTime @default(now()) // 反思日期
+  type      String   @default("daily") // daily, weekly, monthly, quarterly, yearly
+  
+  // 三省吾身模板字段
+  celebrations String? // 值得庆祝的事（JSON数组）
+  improvements String? // 可改进的点（JSON数组）
+  tomorrow     String? // 明日最重要的事
+  
+  // 开放式内容
+  content   String? // Markdown格式
+  mood      String? // 情绪标签
+  tags      String? // 标签（JSON数组）
+  
+  // 关联领域（可选）
+  domainId  String?
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 关联关系
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  domain Domain? @relation(fields: [domainId], references: [id], onDelete: SetNull)
+
+  @@index([userId, date])
+  @@index([type])
+}
+
+// ==================== 周期复盘 ====================
+
+model PeriodicReview {
+  id          String   @id @default(uuid())
+  userId      String
+  period      String   // week, month, quarter, year
+  startDate   DateTime
+  endDate     DateTime
+  
+  // 复盘内容
+  achievements String? // 关键成果（JSON数组）
+  challenges   String? // 挑战与应对（JSON数组）
+  insights     String? // 新认知
+  nextFocus    String? // 下周期重点（JSON数组）
+  
+  // 自动汇总数据（可选，生成时填充）
+  dataSummary String? // JSON格式的数据摘要
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // 关联关系
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, startDate])
+}
+
+// ==================== 洞察笔记库 ====================
+
+model InsightNote {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  content   String   // Markdown格式
+  tags      String?  // 标签（JSON数组）
+  category  String?  // 分类：灵感、困惑、顿悟、问题等
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 关联关系
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([category])
+}

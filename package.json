@@ -1,0 +1,30 @@
+{
+  "name": "meos",
+  "version": "0.1.0",
+  "description": "人生管理系统 - 基于反思与梳理的多方法论生活管理平台",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "backend:dev": "pnpm --filter @meos/backend dev",
+    "frontend:dev": "pnpm --filter @meos/frontend dev"
+  },
+  "devDependencies": {
+    "turbo": "^1.11.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  },
+  "packageManager": "pnpm@8.15.0",
+  "dependencies": {
+    "axios": "^1.13.2",
+    "lucide-react": "^0.562.0"
+  }
+}
