@@ -16,6 +16,7 @@
     "frontend:dev": "pnpm --filter @meos/frontend dev"
   },
   "devDependencies": {
+    "esbuild": "0.21.5",
     "turbo": "^1.11.3"
   },
   "engines": {
@@ -23,6 +24,11 @@
     "pnpm": ">=8.0.0"
   },
   "packageManager": "pnpm@8.15.0",
+  "pnpm": {
+    "overrides": {
+      "esbuild": "0.21.5"
+    }
+  },
   "dependencies": {
     "axios": "^1.13.2",
     "lucide-react": "^0.562.0"

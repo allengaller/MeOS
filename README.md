@@ -55,24 +55,37 @@ MeOS/
 
 ### 环境要求
 
-- Node.js >= 18.0.0
+- Node.js 18-20 LTS (注意：Node.js 22 存在兼容性问题)
 - pnpm >= 8.0.0
 
 ### 安装依赖
 
 ```bash
+# 首次安装
 pnpm install
+
+# 如果遇到网络问题
+pnpm install --force
+
+# Windows 25H2 用户注意：如遇 esbuild 错误，请使用 Node.js 18-20 LTS
 ```
 
 ### 开发模式
 
 ```bash
+# 初始化数据库（首次运行必做）
+cd packages/backend
+pnpm exec prisma migrate dev --name init
+
+# 返回项目根目录
+cd ../..
+
 # 同时启动前后端
 pnpm dev
 
+# 或分别启动：
 # 仅启动后端
 pnpm backend:dev
-
 # 仅启动前端
 pnpm frontend:dev
 ```
@@ -81,6 +94,10 @@ pnpm frontend:dev
 
 ```bash
 pnpm build
+
+# 构建产物位于：
+# - packages/backend/dist/
+# - packages/frontend/dist/
 ```
 
 ## MVP 功能范围（阶段一）
@@ -92,6 +109,33 @@ pnpm build
 - ✅ 简单数据可视化（领域雷达图、时间曲线）
 - ✅ Web端完整功能
 - 🚧 移动端基础功能（计划中）
+
+## 常见问题
+
+### 1. Windows 25H2 兼容性问题
+
+**问题现象**：前端启动时报错 `Cannot read directory "../../../../.."`
+
+**解决方案**：
+- 使用 Node.js 18-20 LTS 版本
+- 项目已通过 pnpm overrides 强制使用 esbuild 0.21.5
+
+### 2. 注册时报错 "The table `main.User` does not exist"
+
+**问题原因**：数据库表未创建
+
+**解决方案**：
+```bash
+cd packages/backend
+pnpm exec prisma migrate dev --name init
+```
+
+### 3. 依赖安装失败
+
+**解决方案**：
+```bash
+pnpm install --force
+```
 
 ## 路线图
 
