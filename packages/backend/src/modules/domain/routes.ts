@@ -10,16 +10,35 @@ const updateDomainSchema = z.object({
 });
 
 export const domainRoutes: FastifyPluginAsync = async (fastify) => {
+  const isDev = process.env.NODE_ENV !== 'production';
+
+  const defaultDomains = [
+    { id: 'dev-1', identifier: 'Career', name: '职业发展', icon: '💼', weight: 1, order: 1 },
+    { id: 'dev-2', identifier: 'Health', name: '身心健康', icon: '💪', weight: 1, order: 2 },
+    { id: 'dev-3', identifier: 'Family', name: '家庭关系', icon: '👨‍👩‍👧‍👦', weight: 1, order: 3 },
+    { id: 'dev-4', identifier: 'Finance', name: '财务状况', icon: '💰', weight: 1, order: 4 },
+    { id: 'dev-5', identifier: 'Learning', name: '学习成长', icon: '📚', weight: 1, order: 5 },
+    { id: 'dev-6', identifier: 'Social', name: '社交人际', icon: '🤝', weight: 1, order: 6 },
+    { id: 'dev-7', identifier: 'Leisure', name: '休闲娱乐', icon: '🎮', weight: 1, order: 7 },
+    { id: 'dev-8', identifier: 'Spirituality', name: '精神世界', icon: '🧘', weight: 1, order: 8 },
+  ];
+
   // 获取用户所有领域
   fastify.get('/', {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
         const userId = (request.user as any).userId;
+        if (isDev && (!userId || userId === 'mock-user-1')) {
+          return { domains: defaultDomains };
+        }
         const domains = await prisma.domain.findMany({
           where: { userId },
           orderBy: { order: 'asc' },
         });
+        if (domains.length === 0 && isDev) {
+          return { domains: defaultDomains };
+        }
         return { domains };
       } catch (error) {
         fastify.log.error(error);

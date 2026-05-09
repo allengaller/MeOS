@@ -26,6 +26,8 @@ model User {
   reflections        Reflection[]
   reviews            PeriodicReview[]
   insights           InsightNote[]
+  mindsetSlogans     MindsetSlogan[]
+  subscriptions      Subscription[]
 }
 
 // ==================== 领域模型 ====================
@@ -137,7 +139,7 @@ model InsightNote {
   content   String   // Markdown格式
   tags      String?  // 标签（JSON数组）
   category  String?  // 分类：灵感、困惑、顿悟、问题等
-  
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -146,4 +148,105 @@ model InsightNote {
 
   @@index([userId, createdAt])
   @@index([category])
+}
+
+// ==================== 订阅服务模型 ====================
+
+model Subscription {
+  id            String   @id @default(uuid())
+  userId        String
+  name          String   // "GitHub Copilot", "JetBrains All Products"
+  provider      String   // "GitHub", "JetBrains", "AWS", "Cursor"
+  billingCycle  String   // "monthly" | "yearly" | "quarterly"
+  costPerCycle  Float
+  currency      String   @default("USD")
+  startDate     DateTime
+  endDate       DateTime?
+  isActive      Boolean  @default(true)
+  autoRenew     Boolean  @default(false)
+  websiteUrl    String?
+  notes         String?
+  config        String?  // JSON: { seatCount, tier, region }
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user          User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quotas        QuotaDefinition[]
+  usageRecords  MonthlyUsage[]
+
+  @@index([userId, isActive])
+}
+
+// ==================== 配额定义模型 ====================
+
+model QuotaDefinition {
+  id                String   @id @default(uuid())
+  subscriptionId    String
+  name              String   // "AI Completions", "Build Minutes"
+  unit              String   // "requests", "minutes", "GB", "tokens"
+  monthlyLimit      Float    // 月额度上限
+  warningThreshold  Float    @default(0.8)
+  criticalThreshold Float   @default(0.95)
+  order             Int      @default(0)
+  quotaType         String   @default("consumable") // "consumable" | "renewable"
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  subscription    Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  usageRecords    QuotaUsage[]
+
+  @@unique([subscriptionId, name])
+  @@index([subscriptionId])
+}
+
+// ==================== 月度使用记录模型 ====================
+
+model MonthlyUsage {
+  id              String   @id @default(uuid())
+  subscriptionId  String
+  year            Int
+  month           Int      // 1-12
+  notes           String?
+  recordedAt      DateTime @default(now())
+
+  subscription    Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  quotaUsages     QuotaUsage[]
+
+  @@unique([subscriptionId, year, month])
+  @@index([subscriptionId, year, month])
+}
+
+// ==================== 单个配额使用量模型 ====================
+
+model QuotaUsage {
+  id                String   @id @default(uuid())
+  monthlyUsageId     String
+  quotaDefinitionId  String
+  usedAmount         Float
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  monthlyUsage     MonthlyUsage   @relation(fields: [monthlyUsageId], references: [id], onDelete: Cascade)
+  quotaDefinition  QuotaDefinition @relation(fields: [quotaDefinitionId], references: [id], onDelete: Cascade)
+
+  @@unique([monthlyUsageId, quotaDefinitionId])
+  @@index([quotaDefinitionId])
+}
+
+// ==================== 心态管理 ====================
+
+model MindsetSlogan {
+  id        String   @id @default(uuid())
+  userId    String
+  content   String   // 心态格言内容
+  category  String   // 分类：整体置顶, 生活, 工作, 身体, 心理, 物品, 经济
+  order     Int      @default(0) // 显示顺序
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // 关联关系
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, category])
+  @@index([userId, order])
 }

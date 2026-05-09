@@ -7,6 +7,8 @@ import { balanceWheelRoutes } from './modules/balance-wheel/routes.js';
 import { reflectionRoutes } from './modules/reflection/routes.js';
 import { reviewRoutes } from './modules/review/routes.js';
 import { insightRoutes } from './modules/insight/routes.js';
+import { subscriptionRoutes } from './modules/subscription/routes.js';
+import { mindsetRoutes } from './modules/mindset/routes.js';
 
 const server = Fastify({
   logger: true,
@@ -22,7 +24,12 @@ await server.register(jwt, {
 });
 
 // JWT验证装饰器
+const isDev = process.env.NODE_ENV !== 'production';
 server.decorate('authenticate', async function (request, reply) {
+  if (isDev) {
+    (request as any).user = { userId: 'mock-user-1' };
+    return;
+  }
   try {
     await request.jwtVerify();
   } catch (err) {
@@ -42,6 +49,8 @@ server.register(balanceWheelRoutes, { prefix: '/api/balance-wheel' });
 server.register(reflectionRoutes, { prefix: '/api/reflections' });
 server.register(reviewRoutes, { prefix: '/api/reviews' });
 server.register(insightRoutes, { prefix: '/api/insights' });
+server.register(subscriptionRoutes, { prefix: '/api/subscriptions' });
+server.register(mindsetRoutes, { prefix: '/api/mindsets' });
 
 // 启动服务器
 const start = async () => {

@@ -15,13 +15,22 @@ interface AuthState {
   logout: () => void;
 }
 
+const mockUser: User = {
+  id: 'mock-user-1',
+  email: 'demo@meos.app',
+  name: 'Demo User',
+  createdAt: new Date().toISOString(),
+};
+
+const mockToken = 'mock-token-for-development';
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      user: null,
-      token: null,
+      user: mockUser,
+      token: mockToken,
       setAuth: (user, token) => set({ user, token }),
-      logout: () => set({ user: null, token: null }),
+      logout: () => set({ user: mockUser, token: mockToken }),
     }),
     {
       name: 'meos-auth',

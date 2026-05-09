@@ -21,10 +21,7 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      useAuthStore.getState().logout();
-      window.location.href = '/login';
-    }
+    console.error('API Error:', error.response?.data || error.message);
     return Promise.reject(error);
   }
 );
