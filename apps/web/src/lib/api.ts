@@ -1,0 +1,272 @@
+import axios from 'axios';
+import { useAuthStore } from '../stores/authStore';
+import { localDB } from './localDB';
+
+const isChromeExtension = typeof chrome !== 'undefined' && chrome.storage;
+
+const remoteApi = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:3001/api',
+  headers: {
+    'Content-Type': 'application/json',
+  },
+});
+
+remoteApi.interceptors.request.use((config) => {
+  const token = useAuthStore.getState().token;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+remoteApi.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    console.error('API Error:', error.response?.data || error.message);
+    return Promise.reject(error);
+  }
+);
+
+const localDBAdapter: any = {
+  async get(url: string) {
+    const result = await this.request(url, 'GET');
+    return { data: result };
+  },
+
+  async post(url: string, data?: any) {
+    const result = await this.request(url, 'POST', data);
+    return { data: result };
+  },
+
+  async patch(url: string, data?: any) {
+    const result = await this.request(url, 'PATCH', data);
+    return { data: result };
+  },
+
+  async delete(url: string) {
+    const result = await this.request(url, 'DELETE');
+    return { data: result };
+  },
+
+  async request(url: string, method: 'GET' | 'POST' | 'PATCH' | 'DELETE' = 'GET', data?: any) {
+    const [path, queryStr] = url.split('?');
+    const segments = path.split('/').filter(Boolean);
+    const entity = segments[0];
+    const id = segments[1];
+
+    const query: Record<string, string> = {};
+    if (queryStr) {
+      for (const pair of queryStr.split('&')) {
+        const [k, v] = pair.split('=');
+        if (k) query[decodeURIComponent(k)] = decodeURIComponent(v || '');
+      }
+    }
+
+    if (url.startsWith('/auth/')) {
+      return this.handleAuth(segments, data);
+    }
+
+    const userId = localDB.auth.getCurrentUserId();
+    if (!userId) {
+      throw { response: { data: { error: '请先登录' } } };
+    }
+
+    const handler = routeHandlers[entity];
+    if (handler) {
+      return handler(method, id, segments, data, localDB, query);
+    }
+
+    throw { response: { data: { error: `Unhandled localDB request: ${method} ${url}` } } };
+  },
+
+  async handleAuth(segments: string[], data: any) {
+    const action = segments[1];
+    switch (action) {
+      case 'login': {
+        const result = await localDB.auth.login(data.email, data.password);
+        localDB.auth.setCurrentUserId(result.user.id);
+        return result;
+      }
+      case 'register': {
+        const result = await localDB.auth.register(data.name, data.email, data.password);
+        localDB.auth.setCurrentUserId(result.user.id);
+        return result;
+      }
+      case 'me': {
+        const user = await localDB.auth.getCurrentUser();
+        if (!user) throw { response: { data: { error: 'Not authenticated' } } };
+        return { user };
+      }
+      default:
+        throw { response: { data: { error: `Unknown auth action: ${action}` } } };
+    }
+  },
+};
+
+const routeHandlers: Record<string, (method: string, id: string, segments: string[], data: any, db: any, query?: Record<string, string>) => any> = {
+  domains: (method, id, _s, data, db) => {
+    if (method === 'GET') return db.domains.getAll();
+    if (method === 'POST') return db.domains.create(data);
+    if (method === 'PATCH' && id) return db.domains.update(id, data);
+    if (method === 'DELETE' && id) { db.domains.delete(id); return { success: true }; }
+    throw { response: { data: { error: `Unhandled domains: ${method}` } } };
+  },
+
+  mindsets: (method, id, _s, data, db) => {
+    if (method === 'GET') return db.mindsets.getAll();
+    if (method === 'POST') return db.mindsets.create(data);
+    if (method === 'PATCH' && id) return db.mindsets.update(id, data);
+    if (method === 'DELETE' && id) { db.mindsets.delete(id); return {}; }
+    throw { response: { data: { error: `Unhandled mindsets: ${method}` } } };
+  },
+
+  'balance-wheel': (method, id, segments, data, db) => {
+    if (method === 'POST') { db.balanceWheel.saveScores(data.scores); return {}; }
+    if (method === 'GET' && segments[1] === 'history') return db.balanceWheel.getHistory();
+    if (method === 'DELETE' && id) { db.balanceWheel.deleteRecord(id); return { success: true }; }
+    throw { response: { data: { error: `Unhandled balance-wheel: ${method}` } } };
+  },
+
+  reflections: (method, id, _s, data, db) => {
+    if (method === 'GET') return db.reflections.getAll();
+    if (method === 'POST') return db.reflections.create(data);
+    if (method === 'PATCH' && id) return db.reflections.update(id, data);
+    if (method === 'DELETE' && id) { db.reflections.delete(id); return { success: true }; }
+    throw { response: { data: { error: `Unhandled reflections: ${method}` } } };
+  },
+
+  reviews: (method, id, _s, data, db) => {
+    if (method === 'GET') return db.reviews.getAll();
+    if (method === 'POST') return db.reviews.create(data);
+    if (method === 'PATCH' && id) return db.reviews.update(id, data);
+    if (method === 'DELETE' && id) { db.reviews.delete(id); return { success: true }; }
+    throw { response: { data: { error: `Unhandled reviews: ${method}` } } };
+  },
+
+  insights: (method, id, _s, data, db) => {
+    if (method === 'GET') return db.insights.getAll();
+    if (method === 'POST') return db.insights.create(data);
+    if (method === 'PATCH' && id) return db.insights.update(id, data);
+    if (method === 'DELETE' && id) { db.insights.delete(id); return { success: true }; }
+    throw { response: { data: { error: `Unhandled insights: ${method}` } } };
+  },
+
+  subscriptions: (method, id, segments, data, db) => {
+    if (method === 'GET' && segments[1] === 'dashboard' && segments[2] === 'summary') {
+      return db.subscriptions.getDashboardSummary();
+    }
+    if (method === 'GET' && !id) return db.subscriptions.getAll();
+    if (method === 'GET' && id) return db.subscriptions.getOne(id);
+    if (method === 'POST' && !id) return db.subscriptions.create(data);
+    if (method === 'POST' && id && segments[2] === 'quotas' && !segments[3]) {
+      return db.subscriptions.addQuota(id, data);
+    }
+    if (method === 'PATCH' && id) {
+      if (segments[2] === 'quotas' && segments[3]) {
+        return db.subscriptions.updateQuota(id, segments[3], data);
+      }
+      return db.subscriptions.update(id, data);
+    }
+    if (method === 'DELETE' && id) {
+      if (segments[2] === 'quotas' && segments[3]) {
+        db.subscriptions.deleteQuota(id, segments[3]);
+        return {};
+      }
+      db.subscriptions.delete(id);
+      return {};
+    }
+    if (method === 'POST' && id && segments[2] === 'usage') {
+      return db.subscriptions.recordUsage(id, parseInt(segments[3]), parseInt(segments[4]), data);
+    }
+    throw { response: { data: { error: `Unhandled subscriptions: ${method}` } } };
+  },
+
+  topics: (method, id, segments, data, db) => {
+    if (method === 'GET') return db.topics.getAll();
+    if (method === 'POST') return db.topics.create(data);
+    if (method === 'PATCH' && id) return db.topics.update(id, data);
+    if (method === 'DELETE' && id) { db.topics.delete(id); return { success: true }; }
+    if (method === 'POST' && id && segments[2] === 'notes') {
+      return db.topics.addNote(id, data);
+    }
+    throw { response: { data: { error: `Unhandled topics: ${method}` } } };
+  },
+
+  todos: (method, id, _s, data, db) => {
+    if (method === 'GET') return db.todos.getAll();
+    if (method === 'POST') return db.todos.create(data);
+    if (method === 'PATCH' && id) return db.todos.update(id, data);
+    if (method === 'DELETE' && id) { db.todos.delete(id); return { success: true }; }
+    throw { response: { data: { error: `Unhandled todos: ${method}` } } };
+  },
+
+  habits: (method, id, _s, data, db) => {
+    if (method === 'GET') return db.habits.getAll();
+    if (method === 'POST') return db.habits.create(data);
+    if (method === 'PATCH' && id) return db.habits.update(id, data);
+    if (method === 'DELETE' && id) { db.habits.delete(id); return { success: true }; }
+    if (method === 'POST' && id) return db.habits.toggleLog(id, data);
+    throw { response: { data: { error: `Unhandled habits: ${method}` } } };
+  },
+
+  goals: (method, id, segments, data, db) => {
+    if (method === 'GET') return db.goals.getAll();
+    if (method === 'POST' && !id) return db.goals.create(data);
+    if (method === 'PATCH' && id && !segments[2]) return db.goals.update(id, data);
+    if (method === 'DELETE' && id && !segments[2]) { db.goals.delete(id); return { success: true }; }
+    if (method === 'POST' && id && segments[2] === 'key-results') return db.goals.createKeyResult(id, data);
+    if (method === 'PATCH' && id && segments[2] === 'key-results' && segments[3]) return db.goals.updateKeyResult(segments[3], data);
+    throw { response: { data: { error: `Unhandled goals: ${method}` } } };
+  },
+
+  visions: (method, id, segments, data, db) => {
+    if (method === 'GET' && !id) return db.visions.getActive();
+    if (method === 'GET' && segments[1] === 'history') return db.visions.getHistory();
+    if (method === 'POST') return db.visions.create(data);
+    if (method === 'PATCH' && id) return db.visions.update(id, data);
+    throw { response: { data: { error: `Unhandled visions: ${method}` } } };
+  },
+
+  contacts: (method, id, _s, data, db) => {
+    if (method === 'GET') return db.contacts.getAll();
+    if (method === 'POST') return db.contacts.create(data);
+    if (method === 'PATCH' && id) return db.contacts.update(id, data);
+    if (method === 'DELETE' && id) { db.contacts.delete(id); return { success: true }; }
+    if (method === 'POST' && id && _s[2] === 'touch') { db.contacts.touch(id); return { success: true }; }
+    throw { response: { data: { error: `Unhandled contacts: ${method}` } } };
+  },
+
+  reading: (method, id, _s, data, db) => {
+    if (method === 'GET') return db.readingItems.getAll();
+    if (method === 'POST') return db.readingItems.create(data);
+    if (method === 'PATCH' && id) return db.readingItems.update(id, data);
+    if (method === 'DELETE' && id) { db.readingItems.delete(id); return { success: true }; }
+    throw { response: { data: { error: `Unhandled reading: ${method}` } } };
+  },
+
+  health: (method, id, segments, data, db, query) => {
+    if (method === 'GET' && !id) return db.healthRecords.getAll(query?.type);
+    if (method === 'GET' && segments[1] === 'summary') return db.healthRecords.getSummary(query?.days ? parseInt(query.days) : 7);
+    if (method === 'POST') return db.healthRecords.create(data);
+    if (method === 'PATCH' && id) return db.healthRecords.update(id, data);
+    if (method === 'DELETE' && id) { db.healthRecords.delete(id); return { success: true }; }
+    throw { response: { data: { error: `Unhandled health: ${method}` } } };
+  },
+
+  workflows: (method, id, segments, data, db) => {
+    if (method === 'GET' && !id) return db.workflows.getAll();
+    if (method === 'POST' && !id) return db.workflows.create(data);
+    if (method === 'GET' && id) return db.workflows.getOne(id);
+    if (method === 'PATCH' && id && !segments[2]) return db.workflows.update(id, data);
+    if (method === 'DELETE' && id && !segments[2]) { db.workflows.delete(id); return { success: true }; }
+    if (method === 'POST' && id && segments[2] === 'steps') return db.workflows.addStep(id, data);
+    if (method === 'PATCH' && id && segments[2] === 'steps' && segments[3]) return db.workflows.updateStep(segments[3], data);
+    if (method === 'DELETE' && id && segments[2] === 'steps' && segments[3]) { db.workflows.deleteStep(segments[3]); return { success: true }; }
+    if (method === 'POST' && id && segments[2] === 'connections') return db.workflows.addConnection(id, data);
+    if (method === 'DELETE' && id && segments[2] === 'connections' && segments[3]) { db.workflows.deleteConnection(segments[3]); return { success: true }; }
+    throw { response: { data: { error: `Unhandled workflows: ${method}` } } };
+  },
+};
+
+export default isChromeExtension ? localDBAdapter : remoteApi;
+export { localDB };

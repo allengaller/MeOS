@@ -1,0 +1,525 @@
+// Prisma Schema for MeOS
+// 五维人生管理系统数据模型
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./meos.db"
+}
+
+// ==================== 用户模型 ====================
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  password  String
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  domains            Domain[]
+  balanceWheelScores BalanceWheelScore[]
+  reflections        Reflection[]
+  reviews            PeriodicReview[]
+  insights           InsightNote[]
+  mindsetSlogans     MindsetSlogan[]
+  subscriptions      Subscription[]
+  topics             Topic[]
+  topicNotes         TopicNote[]
+  visions            Vision[]
+  goals              Goal[]
+  todos              Todo[]
+  habits             Habit[]
+  readingItems       ReadingItem[]
+  contacts           Contact[]
+  healthRecords      HealthRecord[]
+  workflows          Workflow[]
+}
+
+// ==================== 方向 (Direction) ====================
+
+model Vision {
+  id        String   @id @default(uuid())
+  userId    String
+  content   String
+  version   Int      @default(1)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isActive])
+}
+
+model Domain {
+  id          String   @id @default(uuid())
+  userId      String
+  identifier  String
+  name        String
+  icon        String?
+  weight      Int      @default(1)
+  description String?
+  order       Int      @default(0)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user               User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  balanceWheelScores BalanceWheelScore[]
+  reflections        Reflection[]
+  goals              Goal[]
+  todos              Todo[]
+  habits             Habit[]
+  contacts           Contact[]
+  mindsetSlogans     MindsetSlogan[]
+
+  @@unique([userId, identifier])
+  @@index([userId])
+}
+
+model Goal {
+  id          String    @id @default(uuid())
+  userId      String
+  domainId    String
+  title       String
+  description String?
+  status      String    @default("planned")
+  priority    String    @default("medium")
+  startDate   DateTime?
+  endDate     DateTime?
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user       User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  domain     Domain       @relation(fields: [domainId], references: [id], onDelete: Cascade)
+  keyResults KeyResult[]
+  todos      Todo[]
+  habits     Habit[]
+  topics     Topic[]
+
+  @@index([userId, status])
+  @@index([domainId])
+}
+
+model KeyResult {
+  id           String   @id @default(uuid())
+  goalId       String
+  title        String
+  currentValue Float    @default(0)
+  targetValue  Float
+  unit         String
+  startDate    DateTime?
+  endDate      DateTime?
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId])
+}
+
+model MindsetSlogan {
+  id        String   @id @default(uuid())
+  userId    String
+  content   String
+  category  String
+  domainId  String?
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  domain Domain? @relation(fields: [domainId], references: [id], onDelete: SetNull)
+
+  @@index([userId, category])
+  @@index([userId, order])
+}
+
+model BalanceWheelScore {
+  id        String   @id @default(uuid())
+  userId    String
+  domainId  String
+  score     Int
+  note      String?
+  createdAt DateTime @default(now())
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  domain Domain @relation(fields: [domainId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([domainId])
+}
+
+// ==================== 行动 (Action) ====================
+
+model Todo {
+  id               String    @id @default(uuid())
+  userId           String
+  title            String
+  description      String?
+  status           String    @default("inbox")
+  priority         String    @default("medium")
+  dueDate          DateTime?
+  goalId           String?
+  domainId         String?
+  source           String    @default("manual")
+  estimatedMinutes Int?
+  energy           String?
+  order            Int       @default(0)
+  completedAt      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal   Goal?   @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  domain Domain? @relation(fields: [domainId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status])
+  @@index([userId, dueDate])
+  @@index([goalId])
+}
+
+model Habit {
+  id           String   @id @default(uuid())
+  userId       String
+  title        String
+  description  String?
+  frequency    String   @default("daily")
+  targetPerWeek Int?
+  goalId       String?
+  domainId     String?
+  color        String?
+  isActive     Boolean  @default(true)
+  order        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal   Goal?   @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  domain Domain? @relation(fields: [domainId], references: [id], onDelete: SetNull)
+  logs   HabitLog[]
+
+  @@index([userId, isActive])
+}
+
+model HabitLog {
+  id        String   @id @default(uuid())
+  habitId   String
+  date      DateTime
+  note      String?
+  createdAt DateTime @default(now())
+
+  habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, date])
+  @@index([habitId, date])
+}
+
+// ==================== 认知 (Cognition) ====================
+
+model Topic {
+  id                   String    @id @default(uuid())
+  userId               String
+  title                String
+  description          String?
+  category             String    @default("自我探索")
+  status               String    @default("exploring")
+  priority             String    @default("medium")
+  currentUnderstanding String?
+  actionPlan           String?
+  relatedDomainId      String?
+  goalId               String?
+  order                Int       @default(0)
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal         Goal?          @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  notes        TopicNote[]
+  insights     InsightNote[]
+  readingItems ReadingItem[]
+
+  @@index([userId, category])
+  @@index([userId, status])
+  @@index([userId, order])
+}
+
+model TopicNote {
+  id        String   @id @default(uuid())
+  topicId   String
+  userId    String
+  content   String
+  noteType  String   @default("reflection")
+  createdAt DateTime @default(now())
+
+  topic Topic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([topicId, createdAt])
+  @@index([userId])
+}
+
+model InsightNote {
+  id        String   @id @default(uuid())
+  userId    String
+  title     String
+  content   String
+  tags      String?
+  category  String?
+  topicId   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic Topic? @relation(fields: [topicId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt])
+  @@index([category])
+  @@index([topicId])
+}
+
+model ReadingItem {
+  id        String    @id @default(uuid())
+  userId    String
+  title     String
+  author    String?
+  type      String    @default("book")
+  status    String    @default("want")
+  url       String?
+  note      String?
+  rating    Int?
+  topicId   String?
+  startDate DateTime?
+  endDate   DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  user  User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topic Topic? @relation(fields: [topicId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status])
+  @@index([topicId])
+}
+
+// ==================== 反思 (Reflection) ====================
+
+model Reflection {
+  id        String   @id @default(uuid())
+  userId    String
+  date      DateTime @default(now())
+  type      String   @default("daily")
+
+  celebrations String?
+  improvements String?
+  tomorrow     String?
+
+  content   String?
+  mood      String?
+  tags      String?
+
+  domainId  String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  domain Domain? @relation(fields: [domainId], references: [id], onDelete: SetNull)
+
+  @@index([userId, date])
+  @@index([type])
+}
+
+model PeriodicReview {
+  id          String   @id @default(uuid())
+  userId      String
+  period      String
+  startDate   DateTime
+  endDate     DateTime
+
+  achievements String?
+  challenges   String?
+  insights     String?
+  nextFocus    String?
+
+  dataSummary String?
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, startDate])
+}
+
+// ==================== 资源 (Resources) ====================
+
+model Subscription {
+  id           String    @id @default(uuid())
+  userId       String
+  name         String
+  provider     String
+  billingCycle String
+  costPerCycle Float
+  currency     String    @default("USD")
+  startDate    DateTime
+  endDate      DateTime?
+  isActive     Boolean   @default(true)
+  autoRenew    Boolean   @default(false)
+  websiteUrl   String?
+  notes        String?
+  config       String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  quotas       QuotaDefinition[]
+  usageRecords MonthlyUsage[]
+
+  @@index([userId, isActive])
+}
+
+model QuotaDefinition {
+  id                String   @id @default(uuid())
+  subscriptionId    String
+  name              String
+  unit              String
+  monthlyLimit      Float
+  warningThreshold  Float    @default(0.8)
+  criticalThreshold Float   @default(0.95)
+  order             Int      @default(0)
+  quotaType         String   @default("consumable")
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  usageRecords QuotaUsage[]
+
+  @@unique([subscriptionId, name])
+  @@index([subscriptionId])
+}
+
+model MonthlyUsage {
+  id             String   @id @default(uuid())
+  subscriptionId String
+  year           Int
+  month          Int
+  notes          String?
+  recordedAt     DateTime @default(now())
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  quotaUsages  QuotaUsage[]
+
+  @@unique([subscriptionId, year, month])
+  @@index([subscriptionId, year, month])
+}
+
+model QuotaUsage {
+  id                String   @id @default(uuid())
+  monthlyUsageId     String
+  quotaDefinitionId  String
+  usedAmount         Float
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  monthlyUsage     MonthlyUsage    @relation(fields: [monthlyUsageId], references: [id], onDelete: Cascade)
+  quotaDefinition  QuotaDefinition @relation(fields: [quotaDefinitionId], references: [id], onDelete: Cascade)
+
+  @@unique([monthlyUsageId, quotaDefinitionId])
+  @@index([quotaDefinitionId])
+}
+
+model Contact {
+  id           String    @id @default(uuid())
+  userId       String
+  name         String
+  title        String?
+  company      String?
+  relation     String?
+  tags         String?
+  notes        String?
+  contactFreq  String?
+  lastContact  DateTime?
+  domainId     String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  user   User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  domain Domain? @relation(fields: [domainId], references: [id], onDelete: SetNull)
+
+  @@index([userId, relation])
+  @@index([userId, lastContact])
+}
+
+model HealthRecord {
+  id         String   @id @default(uuid())
+  userId     String
+  type       String
+  value      Float
+  unit       String
+  note       String?
+  recordedAt DateTime @default(now())
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type, recordedAt])
+}
+
+// ==================== 工作流 (Workflow) ====================
+
+model Workflow {
+  id          String   @id @default(uuid())
+  userId      String
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  steps       WorkflowStep[]
+  connections WorkflowConnection[]
+
+  @@index([userId])
+}
+
+model WorkflowStep {
+  id         String   @id @default(uuid())
+  workflowId String
+  entityType String   // 'vision' | 'goal' | 'keyResult' | 'todo' | 'habit'
+  entityId   String
+  label      String
+  positionX  Float    @default(0)
+  positionY  Float    @default(0)
+  width      Float    @default(200)
+  height     Float    @default(80)
+  createdAt  DateTime @default(now())
+
+  workflow Workflow         @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  sourceConnections WorkflowConnection[] @relation("SourceStep")
+  targetConnections WorkflowConnection[] @relation("TargetStep")
+
+  @@index([workflowId])
+}
+
+model WorkflowConnection {
+  id           String   @id @default(uuid())
+  workflowId   String
+  sourceStepId String
+  targetStepId String
+  sourceHandle String   @default("bottom")
+  targetHandle String   @default("top")
+  createdAt    DateTime @default(now())
+
+  workflow    Workflow    @relation(fields: [workflowId], references: [id], onDelete: Cascade)
+  sourceStep WorkflowStep @relation("SourceStep", fields: [sourceStepId], references: [id], onDelete: Cascade)
+  targetStep WorkflowStep @relation("TargetStep", fields: [targetStepId], references: [id], onDelete: Cascade)
+
+  @@index([workflowId])
+  @@index([sourceStepId])
+  @@index([targetStepId])
+}

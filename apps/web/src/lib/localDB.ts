@@ -1,0 +1,1654 @@
+// IndexedDB-based local database for Chrome Extension
+// Mirrors the API interface used throughout the app
+
+const DB_NAME = 'MeOS';
+const DB_VERSION = 2;
+
+interface User {
+  id: string;
+  email: string;
+  name: string;
+  password: string;
+  createdAt: string;
+}
+
+interface Domain {
+  id: string;
+  userId: string;
+  name: string;
+  icon: string;
+  identifier: string;
+  description?: string;
+  color: string;
+  weight: number;
+  score: number;
+  order: number;
+}
+
+interface MindsetSlogan {
+  id: string;
+  userId: string;
+  content: string;
+  category: string;
+  order: number;
+  pinned: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface BalanceWheelRecord {
+  id: string;
+  userId: string;
+  scores: { domainId: string; score: number }[];
+  createdAt: string;
+}
+
+interface Reflection {
+  id: string;
+  userId: string;
+  content: string;
+  date?: string;
+  mood?: string;
+  celebrations?: string;
+  improvements?: string;
+  tomorrow?: string;
+  tags?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Review {
+  id: string;
+  userId: string;
+  period: string;
+  content: string;
+  startDate?: string;
+  endDate?: string;
+  highlights?: string;
+  lowlights?: string;
+  learnings?: string;
+  nextActions?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Insight {
+  id: string;
+  userId: string;
+  title: string;
+  content: string;
+  tags?: string | null;
+  category?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Topic {
+  id: string;
+  userId: string;
+  title: string;
+  description?: string;
+  category: string;
+  status: string;
+  priority: string;
+  currentUnderstanding?: string;
+  actionPlan?: string;
+  notes: TopicNote[];
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface TopicNote {
+  id: string;
+  topicId: string;
+  userId: string;
+  content: string;
+  noteType: string;
+  createdAt: string;
+}
+
+interface Todo {
+  id: string;
+  userId: string;
+  title: string;
+  description?: string;
+  priority: 'urgent' | 'high' | 'medium' | 'low';
+  status: 'inbox' | 'todo' | 'doing' | 'done';
+  dueDate?: string;
+  goalId?: string;
+  domainId?: string;
+  completedAt?: string;
+  createdAt: string;
+}
+
+interface Habit {
+  id: string;
+  userId: string;
+  title: string;
+  description?: string;
+  frequency: 'daily' | 'weekly';
+  targetPerWeek?: number;
+  color: string;
+  goalId?: string;
+  domainId?: string;
+  isActive: boolean;
+  order: number;
+  createdAt: string;
+}
+
+interface HabitLog {
+  id: string;
+  habitId: string;
+  date: string;
+  note?: string;
+}
+
+interface Goal {
+  id: string;
+  userId: string;
+  title: string;
+  description?: string;
+  domainId?: string;
+  status: string;
+  priority: string;
+  startDate?: string;
+  endDate?: string;
+  deadline?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface KeyResult {
+  id: string;
+  goalId: string;
+  userId: string;
+  title: string;
+  targetValue: number;
+  currentValue: number;
+  unit: string;
+  order: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Vision {
+  id: string;
+  userId: string;
+  content: string;
+  version: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface Contact {
+  id: string;
+  userId: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  role?: string;
+  company?: string;
+  tags: string[];
+  notes?: string;
+  lastContact?: string;
+  domainId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface ReadingItem {
+  id: string;
+  userId: string;
+  title: string;
+  author?: string;
+  type: string;
+  status: string;
+  url?: string;
+  note?: string;
+  rating?: number;
+  topicId?: string;
+  startDate?: string;
+  endDate?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface HealthRecord {
+  id: string;
+  userId: string;
+  type: string;
+  value: number;
+  unit: string;
+  note?: string;
+  date: string;
+  recordedAt?: string;
+  createdAt: string;
+}
+
+interface Workflow {
+  id: string;
+  userId: string;
+  name: string;
+  description?: string;
+  steps: WorkflowStep[];
+  connections: WorkflowConnection[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface WorkflowStep {
+  id: string;
+  workflowId: string;
+  entityType: 'vision' | 'goal' | 'keyResult' | 'todo' | 'habit';
+  entityId: string;
+  label: string;
+  positionX: number;
+  positionY: number;
+  width: number;
+  height: number;
+  createdAt: string;
+}
+
+interface WorkflowConnection {
+  id: string;
+  workflowId: string;
+  sourceStepId: string;
+  targetStepId: string;
+  sourceHandle: string;
+  targetHandle: string;
+  createdAt: string;
+}
+
+interface Subscription {
+  id: string;
+  userId: string;
+  name: string;
+  provider: string;
+  billingCycle: string;
+  costPerCycle: number;
+  currency: string;
+  startDate: string;
+  endDate?: string;
+  isActive: boolean;
+  autoRenew: boolean;
+  websiteUrl?: string;
+  notes?: string;
+  config?: Record<string, any>;
+  quotas: QuotaDefinition[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface QuotaDefinition {
+  id: string;
+  subscriptionId: string;
+  name: string;
+  unit: string;
+  monthlyLimit: number;
+  warningThreshold: number;
+  criticalThreshold: number;
+  order: number;
+  quotaType: string;
+}
+
+interface MonthlyUsage {
+  id: string;
+  subscriptionId: string;
+  userId: string;
+  year: number;
+  month: number;
+  notes?: string;
+  quotaUsages: QuotaUsage[];
+}
+
+interface QuotaUsage {
+  id: string;
+  monthlyUsageId: string;
+  quotaDefinitionId: string;
+  usedAmount: number;
+}
+
+let dbInstance: IDBDatabase | null = null;
+
+function generateId(): string {
+  return Date.now().toString(36) + Math.random().toString(36).substring(2);
+}
+
+async function openDB(): Promise<IDBDatabase> {
+  if (dbInstance) return dbInstance;
+
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, DB_VERSION);
+
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      dbInstance = request.result;
+      resolve(dbInstance);
+    };
+
+    request.onupgradeneeded = (event) => {
+      const db = (event.target as IDBOpenDBRequest).result;
+
+      if (!db.objectStoreNames.contains('users')) {
+        db.createObjectStore('users', { keyPath: 'id' });
+      }
+
+      if (!db.objectStoreNames.contains('domains')) {
+        const store = db.createObjectStore('domains', { keyPath: 'id' });
+        store.createIndex('userId', 'userId', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('mindsets')) {
+        const store = db.createObjectStore('mindsets', { keyPath: 'id' });
+        store.createIndex('userId', 'userId', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('balanceWheel')) {
+        const store = db.createObjectStore('balanceWheel', { keyPath: 'id' });
+        store.createIndex('userId', 'userId', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('reflections')) {
+        const store = db.createObjectStore('reflections', { keyPath: 'id' });
+        store.createIndex('userId', 'userId', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('reviews')) {
+        const store = db.createObjectStore('reviews', { keyPath: 'id' });
+        store.createIndex('userId', 'userId', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('insights')) {
+        const store = db.createObjectStore('insights', { keyPath: 'id' });
+        store.createIndex('userId', 'userId', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('topics')) {
+        const store = db.createObjectStore('topics', { keyPath: 'id' });
+        store.createIndex('userId', 'userId', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('topicNotes')) {
+        const store = db.createObjectStore('topicNotes', { keyPath: 'id' });
+        store.createIndex('userId', 'userId', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('todos')) {
+        const store = db.createObjectStore('todos', { keyPath: 'id' });
+        store.createIndex('userId', 'userId', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('habits')) {
+        const store = db.createObjectStore('habits', { keyPath: 'id' });
+        store.createIndex('userId', 'userId', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('habitLogs')) {
+        const store = db.createObjectStore('habitLogs', { keyPath: 'id' });
+        store.createIndex('habitId', 'habitId', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('goals')) {
+        const store = db.createObjectStore('goals', { keyPath: 'id' });
+        store.createIndex('userId', 'userId', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('subscriptions')) {
+        const store = db.createObjectStore('subscriptions', { keyPath: 'id' });
+        store.createIndex('userId', 'userId', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('monthlyUsage')) {
+        const store = db.createObjectStore('monthlyUsage', { keyPath: 'id' });
+        store.createIndex('userId', 'userId', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('visions')) {
+        const store = db.createObjectStore('visions', { keyPath: 'id' });
+        store.createIndex('userId', 'userId', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('contacts')) {
+        const store = db.createObjectStore('contacts', { keyPath: 'id' });
+        store.createIndex('userId', 'userId', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('readingItems')) {
+        const store = db.createObjectStore('readingItems', { keyPath: 'id' });
+        store.createIndex('userId', 'userId', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('healthRecords')) {
+        const store = db.createObjectStore('healthRecords', { keyPath: 'id' });
+        store.createIndex('userId', 'userId', { unique: false });
+        store.createIndex('type', 'type', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('workflows')) {
+        const store = db.createObjectStore('workflows', { keyPath: 'id' });
+        store.createIndex('userId', 'userId', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('workflowSteps')) {
+        const store = db.createObjectStore('workflowSteps', { keyPath: 'id' });
+        store.createIndex('workflowId', 'workflowId', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('workflowConnections')) {
+        const store = db.createObjectStore('workflowConnections', { keyPath: 'id' });
+        store.createIndex('workflowId', 'workflowId', { unique: false });
+      }
+
+      if (!db.objectStoreNames.contains('keyResults')) {
+        const store = db.createObjectStore('keyResults', { keyPath: 'id' });
+        store.createIndex('goalId', 'goalId', { unique: false });
+        store.createIndex('userId', 'userId', { unique: false });
+      }
+    };
+  });
+}
+
+async function getByIndex<T>(
+  storeName: string,
+  indexName: string,
+  value: string
+): Promise<T[]> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readonly');
+    const store = tx.objectStore(storeName);
+    const index = store.index(indexName);
+    const request = index.getAll(value);
+    request.onsuccess = () => resolve(request.result as T[]);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function add<T>(storeName: string, data: T): Promise<T> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readwrite');
+    const store = tx.objectStore(storeName);
+    const request = store.add(data);
+    request.onsuccess = () => resolve(data);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function update<T>(storeName: string, data: T): Promise<T> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readwrite');
+    const store = tx.objectStore(storeName);
+    const request = store.put(data);
+    request.onsuccess = () => resolve(data);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+async function remove(storeName: string, id: string): Promise<void> {
+  const db = await openDB();
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction(storeName, 'readwrite');
+    const store = tx.objectStore(storeName);
+    const request = store.delete(id);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+}
+
+let currentUserId: string | null = null;
+
+export const localDB = {
+  auth: {
+    async login(email: string, password: string): Promise<{ user: Omit<User, 'password'>; token: string }> {
+      const db = await openDB();
+      const users = await new Promise<User[]>((resolve, reject) => {
+        const tx = db.transaction('users', 'readonly');
+        const store = tx.objectStore('users');
+        const request = store.getAll();
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      const user = users.find((u) => u.email === email && u.password === password);
+      if (!user) {
+        throw { response: { data: { error: '邮箱或密码错误' } } };
+      }
+      const { password: _, ...userWithoutPassword } = user;
+      currentUserId = user.id;
+      return { user: userWithoutPassword, token: 'local-token-' + user.id };
+    },
+
+    async register(name: string, email: string, password: string): Promise<{ user: Omit<User, 'password'>; token: string }> {
+      const db = await openDB();
+      const users = await new Promise<User[]>((resolve, reject) => {
+        const tx = db.transaction('users', 'readonly');
+        const store = tx.objectStore('users');
+        const request = store.getAll();
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      if (users.find((u) => u.email === email)) {
+        throw { response: { data: { error: '该邮箱已被注册' } } };
+      }
+
+      const newUser: User = {
+        id: generateId(),
+        email,
+        name,
+        password,
+        createdAt: new Date().toISOString(),
+      };
+
+      await add('users', newUser);
+      currentUserId = newUser.id;
+      await createDefaultDomains(newUser.id);
+
+      const { password: _, ...userWithoutPassword } = newUser;
+      return { user: userWithoutPassword, token: 'local-token-' + newUser.id };
+    },
+
+    async getCurrentUser(): Promise<Omit<User, 'password'> | null> {
+      if (!currentUserId) return null;
+      const db = await openDB();
+      return new Promise((resolve, reject) => {
+        const tx = db.transaction('users', 'readonly');
+        const store = tx.objectStore('users');
+        const request = store.get(currentUserId!);
+        request.onsuccess = () => {
+          const user = request.result;
+          if (user) {
+            const { password: _, ...userWithoutPassword } = user;
+            resolve(userWithoutPassword);
+          } else {
+            resolve(null);
+          }
+        };
+        request.onerror = () => reject(request.error);
+      });
+    },
+
+    setCurrentUserId(userId: string | null) {
+      currentUserId = userId;
+    },
+
+    getCurrentUserId(): string | null {
+      return currentUserId;
+    },
+  },
+
+  domains: {
+    async getAll(): Promise<{ domains: Domain[] }> {
+      const domains = currentUserId
+        ? await getByIndex<Domain>('domains', 'userId', currentUserId)
+        : [];
+      return { domains };
+    },
+
+    async create(data: Partial<Domain>): Promise<{ domain: Domain }> {
+      const domain: Domain = {
+        id: generateId(),
+        userId: currentUserId || '',
+        name: data.name || '',
+        icon: data.icon || 'career',
+        identifier: data.identifier || '',
+        description: data.description,
+        color: data.color || '#64748B',
+        weight: data.weight ?? 1,
+        score: data.score ?? 5,
+        order: data.order ?? 0,
+      };
+      await add('domains', domain);
+      return { domain };
+    },
+
+    async update(id: string, data: Partial<Domain>): Promise<{ domain: Domain }> {
+      const db = await openDB();
+      const domain = await new Promise<Domain>((resolve, reject) => {
+        const tx = db.transaction('domains', 'readwrite');
+        const store = tx.objectStore('domains');
+        const request = store.get(id);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+
+      const updated = { ...domain, ...data };
+      await update('domains', updated);
+      return { domain: updated };
+    },
+
+    async delete(id: string): Promise<void> {
+      await remove('domains', id);
+    },
+  },
+
+  mindsets: {
+    async getAll(): Promise<{ slogans: MindsetSlogan[] }> {
+      const slogans = currentUserId
+        ? await getByIndex<MindsetSlogan>('mindsets', 'userId', currentUserId)
+        : [];
+      return { slogans };
+    },
+
+    async create(data: Omit<MindsetSlogan, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<{ slogan: MindsetSlogan }> {
+      const now = new Date().toISOString();
+      const slogan: MindsetSlogan = {
+        ...data,
+        id: generateId(),
+        userId: currentUserId || '',
+        createdAt: now,
+        updatedAt: now,
+      };
+      await add('mindsets', slogan);
+      return { slogan };
+    },
+
+    async update(id: string, data: Partial<MindsetSlogan>): Promise<{ slogan: MindsetSlogan }> {
+      const db = await openDB();
+      const slogan = await new Promise<MindsetSlogan>((resolve, reject) => {
+        const tx = db.transaction('mindsets', 'readwrite');
+        const store = tx.objectStore('mindsets');
+        const request = store.get(id);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+
+      const updated = { ...slogan, ...data, updatedAt: new Date().toISOString() };
+      await update('mindsets', updated);
+      return { slogan: updated };
+    },
+
+    async delete(id: string): Promise<void> {
+      await remove('mindsets', id);
+    },
+  },
+
+  balanceWheel: {
+    async saveScores(scores: { domainId: string; score: number }[]): Promise<void> {
+      const record: BalanceWheelRecord = {
+        id: generateId(),
+        userId: currentUserId || '',
+        scores,
+        createdAt: new Date().toISOString(),
+      };
+      await add('balanceWheel', record);
+    },
+
+    async getHistory(): Promise<{ records: BalanceWheelRecord[] }> {
+      const records = currentUserId
+        ? await getByIndex<BalanceWheelRecord>('balanceWheel', 'userId', currentUserId)
+        : [];
+      return { records };
+    },
+
+    async deleteRecord(id: string): Promise<void> {
+      await remove('balanceWheel', id);
+    },
+  },
+
+  reflections: {
+    async getAll(): Promise<{ reflections: Reflection[] }> {
+      const reflections = currentUserId
+        ? await getByIndex<Reflection>('reflections', 'userId', currentUserId)
+        : [];
+      return { reflections };
+    },
+
+    async create(data: any): Promise<{ reflection: Reflection }> {
+      const now = new Date().toISOString();
+      const reflection: Reflection = {
+        id: generateId(),
+        userId: currentUserId || '',
+        content: data.content || '',
+        date: data.date || now,
+        mood: data.mood,
+        celebrations: data.celebrations,
+        improvements: data.improvements,
+        tomorrow: data.tomorrow,
+        tags: data.tags,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await add('reflections', reflection);
+      return { reflection };
+    },
+
+    async update(id: string, data: Partial<Reflection>): Promise<{ reflection: Reflection }> {
+      const db = await openDB();
+      const reflection = await new Promise<Reflection>((resolve, reject) => {
+        const tx = db.transaction('reflections', 'readwrite');
+        const store = tx.objectStore('reflections');
+        const request = store.get(id);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      const updated = { ...reflection, ...data, updatedAt: new Date().toISOString() };
+      await update('reflections', updated);
+      return { reflection: updated };
+    },
+
+    async delete(id: string): Promise<void> {
+      await remove('reflections', id);
+    },
+  },
+
+  reviews: {
+    async getAll(): Promise<{ reviews: Review[] }> {
+      const reviews = currentUserId
+        ? await getByIndex<Review>('reviews', 'userId', currentUserId)
+        : [];
+      return { reviews };
+    },
+
+    async create(data: any): Promise<{ review: Review }> {
+      const now = new Date().toISOString();
+      const review: Review = {
+        id: generateId(),
+        userId: currentUserId || '',
+        period: data.period || 'weekly',
+        content: data.content || '',
+        startDate: data.startDate,
+        endDate: data.endDate,
+        highlights: data.highlights,
+        lowlights: data.lowlights,
+        learnings: data.learnings,
+        nextActions: data.nextActions,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await add('reviews', review);
+      return { review };
+    },
+
+    async update(id: string, data: Partial<Review>): Promise<{ review: Review }> {
+      const db = await openDB();
+      const review = await new Promise<Review>((resolve, reject) => {
+        const tx = db.transaction('reviews', 'readwrite');
+        const store = tx.objectStore('reviews');
+        const request = store.get(id);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      const updated = { ...review, ...data, updatedAt: new Date().toISOString() };
+      await update('reviews', updated);
+      return { review: updated };
+    },
+
+    async delete(id: string): Promise<void> {
+      await remove('reviews', id);
+    },
+  },
+
+  insights: {
+    async getAll(): Promise<{ insights: Insight[] }> {
+      const insights = currentUserId
+        ? await getByIndex<Insight>('insights', 'userId', currentUserId)
+        : [];
+      return { insights };
+    },
+
+    async create(data: any): Promise<{ insight: Insight }> {
+      const now = new Date().toISOString();
+      const insight: Insight = {
+        id: generateId(),
+        userId: currentUserId || '',
+        title: data.title || '',
+        content: data.content || '',
+        tags: data.tags ? JSON.stringify(data.tags) : null,
+        category: data.category || null,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await add('insights', insight);
+      return { insight };
+    },
+
+    async update(id: string, data: Partial<Insight>): Promise<{ insight: Insight }> {
+      const db = await openDB();
+      const insight = await new Promise<Insight>((resolve, reject) => {
+        const tx = db.transaction('insights', 'readwrite');
+        const store = tx.objectStore('insights');
+        const request = store.get(id);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      const updated = { ...insight, ...data, updatedAt: new Date().toISOString() };
+      if (data.tags) updated.tags = JSON.stringify(data.tags);
+      await update('insights', updated);
+      return { insight: updated };
+    },
+
+    async delete(id: string): Promise<void> {
+      await remove('insights', id);
+    },
+  },
+
+  topics: {
+    async getAll(): Promise<{ topics: Topic[] }> {
+      const topics = currentUserId
+        ? await getByIndex<Topic>('topics', 'userId', currentUserId)
+        : [];
+      return { topics };
+    },
+
+    async create(data: { title: string; description?: string; category: string; status: string; priority: string; currentUnderstanding?: string; actionPlan?: string }): Promise<{ topic: Topic }> {
+      const now = new Date().toISOString();
+      const topic: Topic = {
+        id: generateId(),
+        userId: currentUserId || '',
+        title: data.title,
+        description: data.description,
+        category: data.category,
+        status: data.status,
+        priority: data.priority,
+        currentUnderstanding: data.currentUnderstanding,
+        actionPlan: data.actionPlan,
+        notes: [],
+        order: 0,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await add('topics', topic);
+      return { topic };
+    },
+
+    async update(id: string, data: Partial<Topic>): Promise<{ topic: Topic }> {
+      const db = await openDB();
+      const topic = await new Promise<Topic>((resolve, reject) => {
+        const tx = db.transaction('topics', 'readwrite');
+        const store = tx.objectStore('topics');
+        const request = store.get(id);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      const updated = { ...topic, ...data, updatedAt: new Date().toISOString() };
+      await update('topics', updated);
+      return { topic: updated };
+    },
+
+    async delete(id: string): Promise<void> {
+      await remove('topics', id);
+    },
+
+    async addNote(topicId: string, data: { content: string; noteType?: string }): Promise<{ note: TopicNote }> {
+      const note: TopicNote = {
+        id: generateId(),
+        topicId,
+        userId: currentUserId || '',
+        content: data.content,
+        noteType: data.noteType || 'reflection',
+        createdAt: new Date().toISOString(),
+      };
+      await add('topicNotes', note);
+
+      const db = await openDB();
+      const topic = await new Promise<Topic>((resolve, reject) => {
+        const tx = db.transaction('topics', 'readwrite');
+        const store = tx.objectStore('topics');
+        const request = store.get(topicId);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      const updated = { ...topic, notes: [...topic.notes, note], updatedAt: new Date().toISOString() };
+      await update('topics', updated);
+      return { note };
+    },
+  },
+
+  todos: {
+    async getAll(): Promise<{ todos: Todo[] }> {
+      const todos = currentUserId
+        ? await getByIndex<Todo>('todos', 'userId', currentUserId)
+        : [];
+      return { todos };
+    },
+
+    async create(data: { title: string; description?: string; priority?: string; status?: string }): Promise<{ todo: Todo }> {
+      const todo: Todo = {
+        id: generateId(),
+        userId: currentUserId || '',
+        title: data.title,
+        description: data.description,
+        priority: (data.priority as any) || 'medium',
+        status: (data.status as any) || 'inbox',
+        createdAt: new Date().toISOString(),
+      };
+      await add('todos', todo);
+      return { todo };
+    },
+
+    async update(id: string, data: Partial<Todo>): Promise<{ todo: Todo }> {
+      const db = await openDB();
+      const todo = await new Promise<Todo>((resolve, reject) => {
+        const tx = db.transaction('todos', 'readwrite');
+        const store = tx.objectStore('todos');
+        const request = store.get(id);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      const updated = { ...todo, ...data };
+      await update('todos', updated);
+      return { todo: updated };
+    },
+
+    async delete(id: string): Promise<void> {
+      await remove('todos', id);
+    },
+  },
+
+  habits: {
+    async getAll(): Promise<{ habits: Habit[] }> {
+      const habits = currentUserId
+        ? await getByIndex<Habit>('habits', 'userId', currentUserId)
+        : [];
+      return { habits };
+    },
+
+    async create(data: { title: string; description?: string; frequency?: string; color?: string }): Promise<{ habit: Habit }> {
+      const habit: Habit = {
+        id: generateId(),
+        userId: currentUserId || '',
+        title: data.title,
+        description: data.description,
+        frequency: (data.frequency as any) || 'daily',
+        color: data.color || '#3B82F6',
+        isActive: true,
+        order: 0,
+        createdAt: new Date().toISOString(),
+      };
+      await add('habits', habit);
+      return { habit };
+    },
+
+    async update(id: string, data: Partial<Habit>): Promise<{ habit: Habit }> {
+      const db = await openDB();
+      const habit = await new Promise<Habit>((resolve, reject) => {
+        const tx = db.transaction('habits', 'readwrite');
+        const store = tx.objectStore('habits');
+        const request = store.get(id);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      const updated = { ...habit, ...data };
+      await update('habits', updated);
+      return { habit: updated };
+    },
+
+    async delete(id: string): Promise<void> {
+      await remove('habits', id);
+    },
+
+    async toggleLog(habitId: string, data: { date: string }): Promise<{ logged: boolean }> {
+      const db = await openDB();
+      const logs = await new Promise<HabitLog[]>((resolve, reject) => {
+        const tx = db.transaction('habitLogs', 'readonly');
+        const store = tx.objectStore('habitLogs');
+        const index = store.index('habitId');
+        const request = index.getAll(habitId);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      const existing = logs.find(l => l.date === data.date);
+      if (existing) {
+        await remove('habitLogs', existing.id);
+        return { logged: false };
+      }
+      const log: HabitLog = { id: generateId(), habitId, date: data.date };
+      await add('habitLogs', log);
+      return { logged: true };
+    },
+  },
+
+  goals: {
+    async getAll(): Promise<{ goals: Goal[] }> {
+      const goals = currentUserId
+        ? await getByIndex<Goal>('goals', 'userId', currentUserId)
+        : [];
+      return { goals };
+    },
+
+    async create(data: any): Promise<{ goal: Goal }> {
+      const now = new Date().toISOString();
+      const goal: Goal = {
+        id: generateId(),
+        userId: currentUserId || '',
+        title: data.title || '',
+        description: data.description,
+        domainId: data.domainId,
+        status: data.status || 'active',
+        priority: data.priority || 'medium',
+        startDate: data.startDate,
+        endDate: data.endDate,
+        deadline: data.deadline,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await add('goals', goal);
+      return { goal };
+    },
+
+    async update(id: string, data: Partial<Goal>): Promise<{ goal: Goal }> {
+      const db = await openDB();
+      const goal = await new Promise<Goal>((resolve, reject) => {
+        const tx = db.transaction('goals', 'readwrite');
+        const store = tx.objectStore('goals');
+        const request = store.get(id);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      const updated = { ...goal, ...data, updatedAt: new Date().toISOString() };
+      await update('goals', updated);
+      return { goal: updated };
+    },
+
+    async delete(id: string): Promise<void> {
+      await remove('goals', id);
+      const krs = await getByIndex<KeyResult>('keyResults', 'goalId', id);
+      for (const kr of krs) {
+        await remove('keyResults', kr.id);
+      }
+    },
+
+    async createKeyResult(goalId: string, data: any): Promise<{ keyResult: KeyResult }> {
+      const now = new Date().toISOString();
+      const kr: KeyResult = {
+        id: generateId(),
+        goalId,
+        userId: currentUserId || '',
+        title: data.title || '',
+        targetValue: data.targetValue || 0,
+        currentValue: data.currentValue || 0,
+        unit: data.unit || '',
+        order: data.order || 0,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await add('keyResults', kr);
+      return { keyResult: kr };
+    },
+
+    async updateKeyResult(krId: string, data: Partial<KeyResult>): Promise<{ keyResult: KeyResult }> {
+      const db = await openDB();
+      const kr = await new Promise<KeyResult>((resolve, reject) => {
+        const tx = db.transaction('keyResults', 'readwrite');
+        const store = tx.objectStore('keyResults');
+        const request = store.get(krId);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      const updated = { ...kr, ...data, updatedAt: new Date().toISOString() };
+      await update('keyResults', updated);
+      return { keyResult: updated };
+    },
+  },
+
+  visions: {
+    async getActive(): Promise<{ vision: Vision | null }> {
+      const visions = currentUserId
+        ? await getByIndex<Vision>('visions', 'userId', currentUserId)
+        : [];
+      const active = visions.find((v) => v.isActive) || visions[visions.length - 1] || null;
+      return { vision: active };
+    },
+
+    async create(data: { content: string }): Promise<{ vision: Vision }> {
+      const now = new Date().toISOString();
+      const visions = currentUserId
+        ? await getByIndex<Vision>('visions', 'userId', currentUserId)
+        : [];
+      const latestVersion = visions.reduce((max, v) => Math.max(max, v.version), 0);
+
+      for (const v of visions) {
+        if (v.isActive) {
+          v.isActive = false;
+          await update('visions', v);
+        }
+      }
+
+      const vision: Vision = {
+        id: generateId(),
+        userId: currentUserId || '',
+        content: data.content,
+        version: latestVersion + 1,
+        isActive: true,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await add('visions', vision);
+      return { vision };
+    },
+
+    async update(id: string, data: Partial<Vision>): Promise<{ vision: Vision }> {
+      const db = await openDB();
+      const vision = await new Promise<Vision>((resolve, reject) => {
+        const tx = db.transaction('visions', 'readwrite');
+        const store = tx.objectStore('visions');
+        const request = store.get(id);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+
+      if (data.isActive) {
+        const visions = currentUserId
+          ? await getByIndex<Vision>('visions', 'userId', currentUserId)
+          : [];
+        for (const v of visions) {
+          if (v.id !== id && v.isActive) {
+            v.isActive = false;
+            await update('visions', v);
+          }
+        }
+      }
+
+      const updated = { ...vision, ...data, updatedAt: new Date().toISOString() };
+      await update('visions', updated);
+      return { vision: updated };
+    },
+
+    async getHistory(): Promise<{ visions: Vision[] }> {
+      const visions = currentUserId
+        ? await getByIndex<Vision>('visions', 'userId', currentUserId)
+        : [];
+      return { visions: visions.sort((a, b) => b.version - a.version) };
+    },
+  },
+
+  contacts: {
+    async getAll(): Promise<{ contacts: Contact[] }> {
+      const contacts = currentUserId
+        ? await getByIndex<Contact>('contacts', 'userId', currentUserId)
+        : [];
+      return { contacts };
+    },
+
+    async create(data: any): Promise<{ contact: Contact }> {
+      const now = new Date().toISOString();
+      const contact: Contact = {
+        id: generateId(),
+        userId: currentUserId || '',
+        name: data.name || '',
+        email: data.email,
+        phone: data.phone,
+        role: data.role,
+        company: data.company,
+        tags: data.tags || [],
+        notes: data.notes,
+        lastContact: data.lastContact,
+        domainId: data.domainId,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await add('contacts', contact);
+      return { contact };
+    },
+
+    async update(id: string, data: Partial<Contact>): Promise<{ contact: Contact }> {
+      const db = await openDB();
+      const contact = await new Promise<Contact>((resolve, reject) => {
+        const tx = db.transaction('contacts', 'readwrite');
+        const store = tx.objectStore('contacts');
+        const request = store.get(id);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      const updated = { ...contact, ...data, updatedAt: new Date().toISOString() };
+      await update('contacts', updated);
+      return { contact: updated };
+    },
+
+    async delete(id: string): Promise<void> {
+      await remove('contacts', id);
+    },
+
+    async touch(id: string): Promise<void> {
+      const db = await openDB();
+      const contact = await new Promise<Contact>((resolve, reject) => {
+        const tx = db.transaction('contacts', 'readwrite');
+        const store = tx.objectStore('contacts');
+        const request = store.get(id);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      contact.lastContact = new Date().toISOString();
+      contact.updatedAt = new Date().toISOString();
+      await update('contacts', contact);
+    },
+  },
+
+  readingItems: {
+    async getAll(): Promise<{ items: ReadingItem[] }> {
+      const items = currentUserId
+        ? await getByIndex<ReadingItem>('readingItems', 'userId', currentUserId)
+        : [];
+      return { items };
+    },
+
+    async create(data: any): Promise<{ item: ReadingItem }> {
+      const now = new Date().toISOString();
+      const item: ReadingItem = {
+        id: generateId(),
+        userId: currentUserId || '',
+        title: data.title || '',
+        author: data.author,
+        type: data.type || 'book',
+        status: data.status || 'want',
+        url: data.url,
+        note: data.note,
+        rating: data.rating,
+        topicId: data.topicId,
+        startDate: data.startDate,
+        endDate: data.endDate,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await add('readingItems', item);
+      return { item };
+    },
+
+    async update(id: string, data: Partial<ReadingItem>): Promise<{ item: ReadingItem }> {
+      const db = await openDB();
+      const item = await new Promise<ReadingItem>((resolve, reject) => {
+        const tx = db.transaction('readingItems', 'readwrite');
+        const store = tx.objectStore('readingItems');
+        const request = store.get(id);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      const updated = { ...item, ...data, updatedAt: new Date().toISOString() };
+      await update('readingItems', updated);
+      return { item: updated };
+    },
+
+    async delete(id: string): Promise<void> {
+      await remove('readingItems', id);
+    },
+  },
+
+  healthRecords: {
+    async getAll(type?: string): Promise<{ records: HealthRecord[] }> {
+      let records = currentUserId
+        ? await getByIndex<HealthRecord>('healthRecords', 'userId', currentUserId)
+        : [];
+      if (type) records = records.filter((r) => r.type === type);
+      return { records: records.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) };
+    },
+
+    async create(data: any): Promise<{ record: HealthRecord }> {
+      const now = new Date().toISOString();
+      const record: HealthRecord = {
+        id: generateId(),
+        userId: currentUserId || '',
+        type: data.type || 'weight',
+        value: data.value || 0,
+        unit: data.unit || '',
+        note: data.note,
+        date: data.date || now,
+        recordedAt: data.recordedAt || now,
+        createdAt: now,
+      };
+      await add('healthRecords', record);
+      return { record };
+    },
+
+    async update(id: string, data: Partial<HealthRecord>): Promise<{ record: HealthRecord }> {
+      const db = await openDB();
+      const record = await new Promise<HealthRecord>((resolve, reject) => {
+        const tx = db.transaction('healthRecords', 'readwrite');
+        const store = tx.objectStore('healthRecords');
+        const request = store.get(id);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      const updated = { ...record, ...data };
+      await update('healthRecords', updated);
+      return { record: updated };
+    },
+
+    async delete(id: string): Promise<void> {
+      await remove('healthRecords', id);
+    },
+
+    async getSummary(days: number = 7): Promise<Record<string, { avg: number; count: number; latest: number }>> {
+      const records = currentUserId
+        ? await getByIndex<HealthRecord>('healthRecords', 'userId', currentUserId)
+        : [];
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() - days);
+      const recent = records.filter((r) => new Date(r.date) >= cutoff);
+
+      const summary: Record<string, { avg: number; count: number; latest: number }> = {};
+      const byType: Record<string, HealthRecord[]> = {};
+      for (const r of recent) {
+        if (!byType[r.type]) byType[r.type] = [];
+        byType[r.type].push(r);
+      }
+      for (const [type, items] of Object.entries(byType)) {
+        const values = items.map((i) => i.value);
+        summary[type] = {
+          avg: values.reduce((a, b) => a + b, 0) / values.length,
+          count: values.length,
+          latest: items.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())[0]?.value || 0,
+        };
+      }
+      return summary;
+    },
+  },
+
+  subscriptions: {
+    async getAll(): Promise<{ subscriptions: Subscription[] }> {
+      const subscriptions = currentUserId
+        ? await getByIndex<Subscription>('subscriptions', 'userId', currentUserId)
+        : [];
+      return { subscriptions };
+    },
+
+    async getOne(id: string): Promise<{ subscription: Subscription }> {
+      const db = await openDB();
+      const subscription = await new Promise<Subscription>((resolve, reject) => {
+        const tx = db.transaction('subscriptions', 'readonly');
+        const store = tx.objectStore('subscriptions');
+        const request = store.get(id);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      return { subscription };
+    },
+
+    async create(data: Partial<Subscription>): Promise<{ subscription: Subscription }> {
+      const now = new Date().toISOString();
+      const subscription: Subscription = {
+        id: generateId(),
+        userId: currentUserId || '',
+        name: data.name || '',
+        provider: data.provider || '',
+        billingCycle: data.billingCycle || 'monthly',
+        costPerCycle: data.costPerCycle || 0,
+        currency: data.currency || 'CNY',
+        startDate: data.startDate || now,
+        isActive: data.isActive ?? true,
+        autoRenew: data.autoRenew ?? false,
+        websiteUrl: data.websiteUrl,
+        notes: data.notes,
+        config: data.config,
+        quotas: data.quotas || [],
+        createdAt: now,
+        updatedAt: now,
+      };
+      await add('subscriptions', subscription);
+      return { subscription };
+    },
+
+    async update(id: string, data: Partial<Subscription>): Promise<{ subscription: Subscription }> {
+      const db = await openDB();
+      const subscription = await new Promise<Subscription>((resolve, reject) => {
+        const tx = db.transaction('subscriptions', 'readwrite');
+        const store = tx.objectStore('subscriptions');
+        const request = store.get(id);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+
+      const updated = { ...subscription, ...data, updatedAt: new Date().toISOString() };
+      await update('subscriptions', updated);
+      return { subscription: updated };
+    },
+
+    async delete(id: string): Promise<void> {
+      await remove('subscriptions', id);
+    },
+
+    async addQuota(subscriptionId: string, data: Partial<QuotaDefinition>): Promise<{ quota: QuotaDefinition }> {
+      const quota: QuotaDefinition = {
+        id: generateId(),
+        subscriptionId,
+        name: data.name || '',
+        unit: data.unit || '',
+        monthlyLimit: data.monthlyLimit || 0,
+        warningThreshold: data.warningThreshold || 80,
+        criticalThreshold: data.criticalThreshold || 95,
+        order: data.order || 0,
+        quotaType: data.quotaType || 'counter',
+      };
+
+      const db = await openDB();
+      const subscription = await new Promise<Subscription>((resolve, reject) => {
+        const tx = db.transaction('subscriptions', 'readwrite');
+        const store = tx.objectStore('subscriptions');
+        const request = store.get(subscriptionId);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+
+      subscription.quotas.push(quota);
+      subscription.updatedAt = new Date().toISOString();
+      await update('subscriptions', subscription);
+      return { quota };
+    },
+
+    async updateQuota(subscriptionId: string, quotaId: string, data: Partial<QuotaDefinition>): Promise<{ quota: QuotaDefinition }> {
+      const db = await openDB();
+      const subscription = await new Promise<Subscription>((resolve, reject) => {
+        const tx = db.transaction('subscriptions', 'readwrite');
+        const store = tx.objectStore('subscriptions');
+        const request = store.get(subscriptionId);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+
+      const quotaIndex = subscription.quotas.findIndex((q) => q.id === quotaId);
+      if (quotaIndex === -1) throw new Error('Quota not found');
+
+      subscription.quotas[quotaIndex] = { ...subscription.quotas[quotaIndex], ...data };
+      subscription.updatedAt = new Date().toISOString();
+      await update('subscriptions', subscription);
+      return { quota: subscription.quotas[quotaIndex] };
+    },
+
+    async deleteQuota(subscriptionId: string, quotaId: string): Promise<void> {
+      const db = await openDB();
+      const subscription = await new Promise<Subscription>((resolve, reject) => {
+        const tx = db.transaction('subscriptions', 'readwrite');
+        const store = tx.objectStore('subscriptions');
+        const request = store.get(subscriptionId);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+
+      subscription.quotas = subscription.quotas.filter((q) => q.id !== quotaId);
+      subscription.updatedAt = new Date().toISOString();
+      await update('subscriptions', subscription);
+    },
+
+    async recordUsage(
+      subscriptionId: string,
+      year: number,
+      month: number,
+      data: { notes?: string; quotaUsages: { quotaDefinitionId: string; usedAmount: number }[] }
+    ): Promise<{ monthlyUsage: MonthlyUsage }> {
+      const id = generateId();
+      const usage: MonthlyUsage = {
+        id,
+        subscriptionId,
+        userId: currentUserId || '',
+        year,
+        month,
+        notes: data.notes,
+        quotaUsages: data.quotaUsages.map((u) => ({
+          id: generateId(),
+          monthlyUsageId: id,
+          quotaDefinitionId: u.quotaDefinitionId,
+          usedAmount: u.usedAmount,
+        })),
+      };
+      await add('monthlyUsage', usage);
+      return { monthlyUsage: usage };
+    },
+
+    async getDashboardSummary(): Promise<any> {
+      const subscriptions = currentUserId
+        ? await getByIndex<Subscription>('subscriptions', 'userId', currentUserId)
+        : [];
+
+      const activeSubscriptions = subscriptions.filter((s) => s.isActive);
+
+      return {
+        subscriptions: activeSubscriptions.map((s) => ({
+          id: s.id,
+          name: s.name,
+          provider: s.provider,
+          monthlyCost: s.billingCycle === 'monthly' ? s.costPerCycle : s.costPerCycle / 12,
+          currency: s.currency,
+          overallUtilization: 0,
+          quotaUtilization: [],
+          daysUntilRenewal: 30,
+          isActive: s.isActive,
+          autoRenew: s.autoRenew,
+        })),
+        stats: {
+          totalMonthlySpend: activeSubscriptions.reduce((sum, s) => {
+            const monthly = s.billingCycle === 'monthly' ? s.costPerCycle : s.costPerCycle / 12;
+            return sum + monthly;
+          }, 0),
+          activeCount: activeSubscriptions.length,
+          nearLimitCount: 0,
+          criticalCount: 0,
+        },
+      };
+    },
+  },
+
+  workflows: {
+    async getAll(): Promise<{ workflows: Workflow[] }> {
+      const workflows = currentUserId
+        ? await getByIndex<Workflow>('workflows', 'userId', currentUserId)
+        : [];
+      return { workflows };
+    },
+
+    async create(data: { name: string; description?: string }): Promise<{ workflow: Workflow }> {
+      const now = new Date().toISOString();
+      const workflow: Workflow = {
+        id: generateId(),
+        userId: currentUserId || '',
+        name: data.name,
+        description: data.description,
+        steps: [],
+        connections: [],
+        createdAt: now,
+        updatedAt: now,
+      };
+      await add('workflows', workflow);
+      return { workflow };
+    },
+
+    async update(id: string, data: Partial<Workflow>): Promise<{ workflow: Workflow }> {
+      const db = await openDB();
+      const workflow = await new Promise<Workflow>((resolve, reject) => {
+        const tx = db.transaction('workflows', 'readwrite');
+        const store = tx.objectStore('workflows');
+        const request = store.get(id);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      const updated = { ...workflow, ...data, updatedAt: new Date().toISOString() };
+      await update('workflows', updated);
+      return { workflow: updated };
+    },
+
+    async delete(id: string): Promise<void> {
+      await remove('workflows', id);
+    },
+
+    async getOne(id: string): Promise<{ workflow: Workflow }> {
+      const db = await openDB();
+      const workflow = await new Promise<Workflow>((resolve, reject) => {
+        const tx = db.transaction('workflows', 'readonly');
+        const store = tx.objectStore('workflows');
+        const request = store.get(id);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      if (!workflow) return { workflow: null as any };
+
+      const [steps, connections] = await Promise.all([
+        getByIndex<WorkflowStep>('workflowSteps', 'workflowId', id),
+        getByIndex<WorkflowConnection>('workflowConnections', 'workflowId', id),
+      ]);
+
+      return { workflow: { ...workflow, steps, connections } };
+    },
+
+    async addStep(workflowId: string, data: { entityType: string; entityId: string; label: string; positionX: number; positionY: number }): Promise<{ step: WorkflowStep }> {
+      const step: WorkflowStep = {
+        id: generateId(),
+        workflowId,
+        entityType: data.entityType as 'vision' | 'goal' | 'keyResult' | 'todo' | 'habit',
+        entityId: data.entityId,
+        label: data.label,
+        positionX: data.positionX,
+        positionY: data.positionY,
+        width: 200,
+        height: 80,
+        createdAt: new Date().toISOString(),
+      };
+      await add('workflowSteps', step);
+      return { step };
+    },
+
+    async updateStep(stepId: string, data: Partial<WorkflowStep>): Promise<{ step: WorkflowStep }> {
+      const db = await openDB();
+      const step = await new Promise<WorkflowStep>((resolve, reject) => {
+        const tx = db.transaction('workflowSteps', 'readwrite');
+        const store = tx.objectStore('workflowSteps');
+        const request = store.get(stepId);
+        request.onsuccess = () => resolve(request.result);
+        request.onerror = () => reject(request.error);
+      });
+      const updated = { ...step, ...data };
+      await update('workflowSteps', updated);
+      return { step: updated };
+    },
+
+    async deleteStep(stepId: string): Promise<void> {
+      await remove('workflowSteps', stepId);
+    },
+
+    async addConnection(workflowId: string, data: { sourceStepId: string; targetStepId: string }): Promise<{ connection: WorkflowConnection }> {
+      const connection: WorkflowConnection = {
+        id: generateId(),
+        workflowId,
+        sourceStepId: data.sourceStepId,
+        targetStepId: data.targetStepId,
+        sourceHandle: 'bottom',
+        targetHandle: 'top',
+        createdAt: new Date().toISOString(),
+      };
+      await add('workflowConnections', connection);
+      return { connection };
+    },
+
+    async deleteConnection(connId: string): Promise<void> {
+      await remove('workflowConnections', connId);
+    },
+  },
+};
+
+async function createDefaultDomains(userId: string) {
+  const defaultDomains: Omit<Domain, 'id' | 'userId'>[] = [
+    { name: '工作 Career', icon: 'career', identifier: 'career', color: '#0ea5e9', weight: 10, score: 5, order: 0, description: '职业发展与工作成就' },
+    { name: '财务 Finance', icon: 'finance', identifier: 'finance', color: '#22c55e', weight: 8, score: 5, order: 1, description: '收入、储蓄与理财' },
+    { name: '健康 Health', icon: 'health', identifier: 'health', color: '#ef4444', weight: 9, score: 5, order: 2, description: '身体与心理健康' },
+    { name: '家庭 Family', icon: 'family', identifier: 'family', color: '#f97316', weight: 10, score: 5, order: 3, description: '家人与家庭关系' },
+    { name: '社交 Social', icon: 'social', identifier: 'social', color: '#a855f7', weight: 7, score: 5, order: 4, description: '朋友与人际关系' },
+    { name: '个人成长 Learning', icon: 'learning', identifier: 'learning', color: '#eab308', weight: 8, score: 5, order: 5, description: '知识、技能与认知提升' },
+    { name: '娱乐休闲 Entertainment', icon: 'leisure', identifier: 'entertainment', color: '#ec4899', weight: 6, score: 5, order: 6, description: '爱好、娱乐与放松' },
+    { name: '环境与物资 Environment', icon: 'flower', identifier: 'environment', color: '#14b8a6', weight: 6, score: 5, order: 7, description: '居住环境与物质管理' },
+  ];
+
+  for (const domain of defaultDomains) {
+    const fullDomain: Domain = { ...domain, id: generateId(), userId };
+    await add('domains', fullDomain);
+  }
+}

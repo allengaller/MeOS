@@ -1,0 +1,364 @@
+import { useEffect, useState, useCallback } from 'react';
+import { format, startOfDay } from 'date-fns';
+import { Calendar, Plus, X, Save, Sparkles, Trash2 } from 'lucide-react';
+import api from '../../lib/api';
+import LoadingSpinner from '../../components/LoadingSpinner';
+
+const MOOD_OPTIONS = [
+  { emoji: '😊', value: 'happy' },
+  { emoji: '😐', value: 'neutral' },
+  { emoji: '😢', value: 'sad' },
+  { emoji: '😤', value: 'angry' },
+  { emoji: '😴', value: 'tired' },
+];
+
+function parseJsonArray(val: unknown): string[] {
+  if (Array.isArray(val)) return val;
+  if (typeof val === 'string') {
+    try {
+      const parsed = JSON.parse(val);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (err) {
+      console.error(err);
+      return [];
+    }
+  }
+  return [];
+}
+
+export default function Daily() {
+  const [selectedDate, setSelectedDate] = useState(format(new Date(), 'yyyy-MM-dd'));
+  const [reflections, setReflections] = useState<{ id: string; date?: string; createdAt?: string; celebrations?: unknown; improvements?: unknown; tomorrow?: string; mood?: string; tags?: string; content?: string }[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const [existingId, setExistingId] = useState<string | null>(null);
+  const [celebrations, setCelebrations] = useState<string[]>([]);
+  const [improvements, setImprovements] = useState<string[]>([]);
+  const [tomorrow, setTomorrow] = useState('');
+  const [mood, setMood] = useState('');
+  const [tags, setTags] = useState('');
+  const [content, setContent] = useState('');
+  const [deleting, setDeleting] = useState(false);
+
+  const [celebInput, setCelebInput] = useState('');
+  const [improvInput, setImprovInput] = useState('');
+
+  useEffect(() => {
+    findMatchingReflection();
+  }, [selectedDate, reflections]);
+
+  const loadReflections = useCallback(async () => {
+    try {
+      const res = await api.get('/reflections');
+      setReflections(res.data.reflections || res.data || []);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadReflections();
+  }, [loadReflections]);
+
+  const findMatchingReflection = () => {
+    const target = format(startOfDay(new Date(selectedDate)), 'yyyy-MM-dd');
+    const match = reflections.find((r) => {
+      const rawDate = r.date || r.createdAt;
+      if (!rawDate) return false;
+      const rDate = format(startOfDay(new Date(rawDate)), 'yyyy-MM-dd');
+      return rDate === target;
+    });
+
+    if (match) {
+      setExistingId(match.id);
+      setCelebrations(parseJsonArray(match.celebrations));
+      setImprovements(parseJsonArray(match.improvements));
+      setTomorrow(match.tomorrow || '');
+      setMood(match.mood || '');
+      setTags(match.tags || '');
+      setContent(match.content || '');
+    } else {
+      setExistingId(null);
+      setCelebrations([]);
+      setImprovements([]);
+      setTomorrow('');
+      setMood('');
+      setTags('');
+      setContent('');
+    }
+  };
+
+  const addCeleb = () => {
+    const trimmed = celebInput.trim();
+    if (trimmed && !celebrations.includes(trimmed)) {
+      setCelebrations([...celebrations, trimmed]);
+    }
+    setCelebInput('');
+  };
+
+  const removeCeleb = (idx: number) => {
+    setCelebrations(celebrations.filter((_, i) => i !== idx));
+  };
+
+  const addImprov = () => {
+    const trimmed = improvInput.trim();
+    if (trimmed && !improvements.includes(trimmed)) {
+      setImprovements([...improvements, trimmed]);
+    }
+    setImprovInput('');
+  };
+
+  const removeImprov = (idx: number) => {
+    setImprovements(improvements.filter((_, i) => i !== idx));
+  };
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const payload = {
+        date: selectedDate,
+        celebrations: JSON.stringify(celebrations),
+        improvements: JSON.stringify(improvements),
+        tomorrow,
+        mood,
+        tags,
+        content,
+      };
+      if (existingId) {
+        await api.patch(`/reflections/${existingId}`, payload);
+      } else {
+        await api.post('/reflections', payload);
+      }
+      await loadReflections();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleGenerateTodo = async () => {
+    if (!tomorrow.trim()) return;
+    try {
+      await api.post('/todos', { title: tomorrow.trim(), source: 'reflection' });
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!existingId) return;
+    if (!window.confirm('确定删除今天的反思记录？')) return;
+    setDeleting(true);
+    try {
+      await api.delete(`/reflections/${existingId}`);
+      await loadReflections();
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
+  if (loading) {
+    return <LoadingSpinner />;
+  }
+
+  return (
+    <div className="page-enter">
+      <div className="mb-8">
+        <h1
+          className="text-3xl mb-1"
+          style={{
+            fontFamily: 'var(--font-display)',
+            fontWeight: 500,
+            letterSpacing: '-0.02em',
+            color: 'var(--color-text-primary)',
+          }}
+        >
+          每日复盘
+        </h1>
+        <p className="text-sm" style={{ color: 'var(--color-text-tertiary)' }}>
+          记录今天的收获、反思和明天的计划
+        </p>
+      </div>
+
+      <div className="card p-5 mb-4">
+        <div className="flex items-center gap-3">
+          <Calendar className="w-4 h-4" style={{ color: 'var(--color-text-tertiary)' }} />
+          <input
+            type="date"
+            value={selectedDate}
+            onChange={(e) => setSelectedDate(e.target.value)}
+            className="input"
+          />
+        </div>
+      </div>
+
+      <div className="card p-5 mb-4">
+        <label className="text-xs font-medium mb-3 block" style={{ color: 'var(--color-text-secondary)' }}>
+          值得庆祝的事
+        </label>
+        <div className="flex flex-wrap gap-2 mb-3">
+          {celebrations.map((item, idx) => (
+            <span
+              key={idx}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm"
+              style={{ backgroundColor: 'var(--color-bg-secondary)', color: 'var(--color-text-secondary)' }}
+            >
+              {item}
+              <button onClick={() => removeCeleb(idx)} style={{ color: 'var(--color-text-tertiary)' }}>
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={celebInput}
+            onChange={(e) => setCelebInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addCeleb(); } }}
+            placeholder="输入后回车添加"
+            className="input"
+          />
+          <button onClick={addCeleb} className="btn btn-ghost">
+            <Plus className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="card p-5 mb-4">
+        <label className="text-xs font-medium mb-3 block" style={{ color: 'var(--color-text-secondary)' }}>
+          可以改进的
+        </label>
+        <div className="flex flex-wrap gap-2 mb-3">
+          {improvements.map((item, idx) => (
+            <span
+              key={idx}
+              className="inline-flex items-center gap-1 px-3 py-1.5 rounded-full text-sm"
+              style={{ backgroundColor: 'var(--color-bg-secondary)', color: 'var(--color-text-secondary)' }}
+            >
+              {item}
+              <button onClick={() => removeImprov(idx)} style={{ color: 'var(--color-text-tertiary)' }}>
+                <X className="w-3 h-3" />
+              </button>
+            </span>
+          ))}
+        </div>
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={improvInput}
+            onChange={(e) => setImprovInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addImprov(); } }}
+            placeholder="输入后回车添加"
+            className="input"
+          />
+          <button onClick={addImprov} className="btn btn-ghost">
+            <Plus className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+
+      <div className="card p-5 mb-4">
+        <label className="text-xs font-medium mb-3 block" style={{ color: 'var(--color-text-secondary)' }}>
+          明日最重要的事
+        </label>
+        <textarea
+          value={tomorrow}
+          onChange={(e) => setTomorrow(e.target.value)}
+          rows={3}
+          placeholder="明天最重要的一件事是什么？"
+          className="input resize-none"
+        />
+        {tomorrow.trim() && (
+          <button
+            onClick={handleGenerateTodo}
+            className="mt-3 btn btn-ghost text-sm"
+          >
+            <Sparkles className="w-3.5 h-3.5" />
+            生成待办
+          </button>
+        )}
+      </div>
+
+      <div className="card p-5 mb-4">
+        <label className="text-xs font-medium mb-3 block" style={{ color: 'var(--color-text-secondary)' }}>
+          心情
+        </label>
+        <div className="flex gap-3">
+          {MOOD_OPTIONS.map((opt) => (
+            <button
+              key={opt.value}
+              onClick={() => setMood(opt.value)}
+              className={`w-12 h-12 rounded-xl text-xl flex items-center justify-center transition-all ${
+                mood === opt.value
+                  ? 'border-2'
+                  : 'border'
+              }`}
+              style={{
+                backgroundColor: mood === opt.value ? 'var(--color-bg-tertiary)' : 'var(--color-bg-secondary)',
+                borderColor: mood === opt.value ? 'var(--color-text-primary)' : 'var(--color-border)',
+              }}
+            >
+              {opt.emoji}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      <div className="card p-5 mb-4">
+        <label className="text-xs font-medium mb-3 block" style={{ color: 'var(--color-text-secondary)' }}>
+          标签
+        </label>
+        <input
+          type="text"
+          value={tags}
+          onChange={(e) => setTags(e.target.value)}
+          placeholder="用逗号分隔多个标签"
+          className="input"
+        />
+      </div>
+
+      <div className="card p-5 mb-4">
+        <label className="text-xs font-medium mb-3 block" style={{ color: 'var(--color-text-secondary)' }}>
+          自由记录
+        </label>
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          rows={8}
+          placeholder="写下你今天的想法和感受..."
+          className="input resize-none"
+        />
+      </div>
+
+      <div className="flex justify-end gap-3 mb-6">
+        {existingId && (
+          <button
+            onClick={handleDelete}
+            disabled={deleting}
+            className="btn btn-ghost"
+            style={{ color: 'var(--color-error)' }}
+          >
+            <Trash2 className="w-4 h-4" />
+            {deleting ? '删除中...' : '删除'}
+          </button>
+        )}
+        <button onClick={handleSave} disabled={saving} className="btn btn-primary">
+          <Save className="w-4 h-4" />
+          {saving ? '保存中...' : '保存'}
+        </button>
+      </div>
+
+      <div className="card p-5">
+        <h3 className="text-xs font-medium" style={{ color: 'var(--color-text-tertiary)' }}>今日数据</h3>
+        <p className="text-sm mt-2" style={{ color: 'var(--color-text-tertiary)' }}>当日数据汇总功能开发中</p>
+      </div>
+    </div>
+  );
+}
