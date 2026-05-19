@@ -49,7 +49,7 @@ export const todoRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const query = listQuerySchema.parse(request.query);
 
         const where: any = { userId };
@@ -84,7 +84,7 @@ export const todoRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const data = createTodoSchema.parse(request.body);
 
         const createData: any = {
@@ -123,7 +123,7 @@ export const todoRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const { id } = request.params as { id: string };
 
         const todo = await prisma.todo.findFirst({
@@ -146,7 +146,7 @@ export const todoRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const { id } = request.params as { id: string };
         const data = updateTodoSchema.parse(request.body);
 
@@ -200,7 +200,7 @@ export const todoRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const { id } = request.params as { id: string };
 
         const result = await prisma.todo.deleteMany({

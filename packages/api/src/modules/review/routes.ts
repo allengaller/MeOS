@@ -18,7 +18,7 @@ export const reviewRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const data = reviewSchema.parse(request.body);
 
         const review = await prisma.periodicReview.create({
@@ -50,7 +50,7 @@ export const reviewRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const { period, page = 1, limit = 20 } = request.query as { period?: string; page?: number; limit?: number };
 
         const where: any = { userId };
@@ -81,7 +81,7 @@ export const reviewRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const { id } = request.params as { id: string };
 
         const review = await prisma.periodicReview.findFirst({
@@ -105,7 +105,7 @@ export const reviewRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const { id } = request.params as { id: string };
         const data = reviewSchema.partial().parse(request.body);
 
@@ -142,7 +142,7 @@ export const reviewRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const { id } = request.params as { id: string };
 
         const result = await prisma.periodicReview.deleteMany({

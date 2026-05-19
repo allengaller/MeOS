@@ -20,7 +20,7 @@ export const reflectionRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const data = reflectionSchema.parse(request.body);
 
         const reflection = await prisma.reflection.create({
@@ -54,7 +54,7 @@ export const reflectionRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const { type, limit = 20, page = 1 } = request.query as { type?: string; limit?: number; page?: number };
 
         const where: any = { userId };
@@ -86,7 +86,7 @@ export const reflectionRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const { id } = request.params as { id: string };
 
         const reflection = await prisma.reflection.findFirst({
@@ -111,7 +111,7 @@ export const reflectionRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const { id } = request.params as { id: string };
         const data = reflectionSchema.partial().parse(request.body);
 
@@ -147,7 +147,7 @@ export const reflectionRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const { id } = request.params as { id: string };
 
         const result = await prisma.reflection.deleteMany({

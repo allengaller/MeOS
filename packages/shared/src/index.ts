@@ -3,6 +3,12 @@
  * 前后端共享的核心类型定义
  */
 
+// ==================== 认证类型 ====================
+
+export interface AuthenticatedUser {
+  userId: string;
+}
+
 // ==================== 基础类型 ====================
 
 export interface User {
@@ -315,5 +321,10 @@ export interface PaginatedResponse<T> {
     pageSize: number;
     total: number;
     totalPages: number;
+    hasMore: boolean;
   };
 }
+
+// Re-export pagination utilities
+export { getPaginationParams, createPaginatedResponse } from './pagination.js';
+export type { PaginationInput, PaginationResult } from './pagination.js';

@@ -1,6 +1,7 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
 import { prisma } from '../../lib/prisma.js';
+import { getPaginationParams, createPaginatedResponse } from '@meos/shared';
 
 const createSubscriptionSchema = z.object({
   name: z.string().min(1),
@@ -40,11 +41,11 @@ const recordUsageSchema = z.object({
 });
 
 export const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
-  const auth = { onRequest: [fastify.authenticate] as any };
+  const auth = { onRequest: [fastify.authenticate] };
 
   fastify.post('/', auth, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const data = createSubscriptionSchema.parse(request.body);
 
       const subscription = await prisma.subscription.create({
@@ -72,21 +73,25 @@ export const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get('/', auth, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
-      const { limit = 50, offset = 0 } = request.query as { limit?: number; offset?: number };
+      const userId = request.user.userId;
+      const { page, pageSize, limit = 50, offset = 0 } = request.query as {
+        page?: number; pageSize?: number; limit?: number; offset?: number;
+      };
+
+      const { take, skip } = getPaginationParams({ page, pageSize, limit, offset });
 
       const [subscriptions, total] = await Promise.all([
         prisma.subscription.findMany({
           where: { userId },
           include: { quotas: { orderBy: { order: 'asc' } } },
           orderBy: { createdAt: 'desc' },
-          take: Number(limit),
-          skip: Number(offset),
+          take,
+          skip,
         }),
         prisma.subscription.count({ where: { userId } }),
       ]);
 
-      return { subscriptions, total };
+      return createPaginatedResponse(subscriptions, total, { page, pageSize, limit, offset });
     } catch (error) {
       fastify.log.error(error);
       return reply.code(500).send({ error: '服务器错误' });
@@ -95,7 +100,7 @@ export const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get('/dashboard/summary', auth, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
 
       const subscriptions = await prisma.subscription.findMany({
         where: { userId, isActive: true },
@@ -198,7 +203,7 @@ export const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get('/:id', auth, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id } = request.params as { id: string };
 
       const subscription = await prisma.subscription.findFirst({
@@ -231,7 +236,7 @@ export const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.patch('/:id', auth, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id } = request.params as { id: string };
       const data = updateSubscriptionSchema.parse(request.body);
 
@@ -257,7 +262,7 @@ export const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.delete('/:id', auth, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id } = request.params as { id: string };
 
       const existing = await prisma.subscription.findFirst({ where: { id, userId } });
@@ -275,7 +280,7 @@ export const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.post('/:id/quotas', auth, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id } = request.params as { id: string };
       const data = createQuotaSchema.parse(request.body);
 
@@ -297,7 +302,7 @@ export const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.patch('/:id/quotas/:quotaId', auth, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id, quotaId } = request.params as { id: string; quotaId: string };
       const data = updateQuotaSchema.parse(request.body);
 
@@ -319,7 +324,7 @@ export const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.delete('/:id/quotas/:quotaId', auth, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id, quotaId } = request.params as { id: string; quotaId: string };
 
       const subscription = await prisma.subscription.findFirst({ where: { id, userId } });
@@ -337,7 +342,7 @@ export const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.post('/:id/usage/:year/:month', auth, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id, year, month } = request.params as { id: string; year: string; month: string };
       const data = recordUsageSchema.parse(request.body);
 
@@ -381,7 +386,7 @@ export const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get('/:id/usage/:year/:month', auth, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id, year, month } = request.params as { id: string; year: string; month: string };
 
       const subscription = await prisma.subscription.findFirst({ where: { id, userId } });
@@ -403,7 +408,7 @@ export const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get('/:id/usage', auth, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id } = request.params as { id: string };
       const { limit = 12, offset = 0 } = request.query as { limit?: number; offset?: number };
 
@@ -432,7 +437,7 @@ export const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
 
   fastify.get('/:id/usage/current', auth, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id } = request.params as { id: string };
 
       const subscription = await prisma.subscription.findFirst({ where: { id, userId }, include: { quotas: true } });

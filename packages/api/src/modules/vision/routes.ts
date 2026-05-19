@@ -16,7 +16,7 @@ export const visionRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const vision = await prisma.vision.findFirst({
         where: { userId, isActive: true },
       });
@@ -31,7 +31,7 @@ export const visionRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { content } = createVisionSchema.parse(request.body);
 
       const latest = await prisma.vision.findFirst({
@@ -67,7 +67,7 @@ export const visionRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id } = request.params as { id: string };
       const data = updateVisionSchema.parse(request.body);
 
@@ -105,7 +105,7 @@ export const visionRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const visions = await prisma.vision.findMany({
         where: { userId },
         orderBy: { version: 'desc' },

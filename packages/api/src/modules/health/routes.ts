@@ -36,7 +36,7 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { days } = summarySchema.parse(request.query);
       const from = new Date();
       from.setDate(from.getDate() - days);
@@ -78,7 +78,7 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const query = listHealthSchema.parse(request.query);
 
       const sevenDaysAgo = new Date();
@@ -109,7 +109,7 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const data = createHealthSchema.parse(request.body);
       const record = await prisma.healthRecord.create({
         data: { ...data, userId },
@@ -128,7 +128,7 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id } = request.params as { id: string };
       const result = await prisma.healthRecord.deleteMany({
         where: { id, userId },
@@ -148,7 +148,7 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id } = request.params as { id: string };
 
       const record = await prisma.healthRecord.findFirst({
@@ -171,7 +171,7 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id } = request.params as { id: string };
       const data = createHealthSchema.partial().parse(request.body);
 

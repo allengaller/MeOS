@@ -38,7 +38,7 @@ export const domainRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         if (isDev && (!userId || userId === 'mock-user-1')) {
           return { domains: defaultDomains };
         }
@@ -59,7 +59,7 @@ export const domainRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const { id } = request.params as { id: string };
         const data = updateDomainSchema.parse(request.body);
 
@@ -89,7 +89,7 @@ export const domainRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const data = createDomainSchema.parse(request.body);
 
         const domain = await prisma.domain.create({
@@ -115,7 +115,7 @@ export const domainRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const { id } = request.params as { id: string };
 
         const result = await prisma.domain.deleteMany({

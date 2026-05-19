@@ -15,7 +15,7 @@ export const insightRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const data = insightSchema.parse(request.body);
 
         const insight = await prisma.insightNote.create({
@@ -44,7 +44,7 @@ export const insightRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const { category, limit = 50, search, page = 1, sortBy = 'createdAt', sortOrder = 'desc' } = request.query as {
           category?: string;
           limit?: number;
@@ -89,7 +89,7 @@ export const insightRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const { id } = request.params as { id: string };
 
         const insight = await prisma.insightNote.findFirst({
@@ -113,7 +113,7 @@ export const insightRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const { id } = request.params as { id: string };
         const data = insightSchema.partial().parse(request.body);
 
@@ -146,7 +146,7 @@ export const insightRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const { id } = request.params as { id: string };
 
         const result = await prisma.insightNote.deleteMany({

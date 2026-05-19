@@ -51,7 +51,7 @@ export const goalRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const goals = await prisma.goal.findMany({
         where: { userId },
         orderBy: [
@@ -74,7 +74,7 @@ export const goalRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const data = createGoalSchema.parse(request.body);
       const goal = await prisma.goal.create({
         data: {
@@ -95,7 +95,7 @@ export const goalRoutes: FastifyPluginAsync = async (fastify) => {
   fastify.get('/:id', {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
-    const userId = (request.user as any).userId;
+    const userId = request.user.userId;
     const { id } = request.params as { id: string };
     const goal = await prisma.goal.findFirst({
       where: { id, userId },
@@ -111,7 +111,7 @@ export const goalRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id } = request.params as { id: string };
       const data = updateGoalSchema.parse(request.body);
       const result = await prisma.goal.updateMany({
@@ -136,7 +136,7 @@ export const goalRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id } = request.params as { id: string };
       const result = await prisma.goal.deleteMany({
         where: { id, userId },
@@ -155,7 +155,7 @@ export const goalRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id } = request.params as { id: string };
       const goal = await prisma.goal.findFirst({ where: { id, userId } });
       if (!goal) {
@@ -182,7 +182,7 @@ export const goalRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id, krId } = request.params as { id: string; krId: string };
       const goal = await prisma.goal.findFirst({ where: { id, userId } });
       if (!goal) {
@@ -211,7 +211,7 @@ export const goalRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id, krId } = request.params as { id: string; krId: string };
       const goal = await prisma.goal.findFirst({ where: { id, userId } });
       if (!goal) {

@@ -46,7 +46,7 @@ export const contactRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const query = listContactSchema.parse(request.query);
       const where: any = { userId };
       if (query.relation) where.relation = query.relation;
@@ -84,7 +84,7 @@ export const contactRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const data = createContactSchema.parse(request.body);
       const contact = await prisma.contact.create({
         data: { ...data, userId },
@@ -103,7 +103,7 @@ export const contactRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id } = request.params as { id: string };
       const contact = await prisma.contact.findFirst({
         where: { id, userId },
@@ -122,7 +122,7 @@ export const contactRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id } = request.params as { id: string };
       const data = updateContactSchema.parse(request.body);
       const result = await prisma.contact.updateMany({
@@ -147,7 +147,7 @@ export const contactRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id } = request.params as { id: string };
       const result = await prisma.contact.deleteMany({
         where: { id, userId },
@@ -166,7 +166,7 @@ export const contactRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id } = request.params as { id: string };
       touchSchema.parse(request.body);
 

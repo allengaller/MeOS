@@ -35,19 +35,25 @@
 ```
 MeOS/
 ├── packages/
-│   ├── backend/          # 后端API服务
+│   ├── api/               # 后端API服务
 │   │   ├── src/
 │   │   │   ├── modules/  # 业务模块
-│   │   │   ├── prisma/   # 数据库模型
+│   │   │   ├── lib/     # 工具库
 │   │   │   └── server.ts
+│   │   ├── prisma/      # 数据库模型
 │   │   └── package.json
-│   └── frontend/         # Web前端应用
-│       ├── src/
-│       │   ├── components/
-│       │   ├── pages/
-│       │   ├── hooks/
-│       │   └── stores/
-│       └── package.json
+│   └── shared/           # 共享类型和工具
+│       └── src/
+├── apps/
+│   ├── web/              # Web前端应用
+│   │   ├── src/
+│   │   │   ├── components/
+│   │   │   ├── pages/
+│   │   │   ├── hooks/
+│   │   │   └── stores/
+│   │   └── package.json
+│   ├── chrome-extension/ # Chrome 扩展
+│   └── mac-app/         # Mac 应用 (规划中)
 └── package.json
 ```
 
@@ -74,7 +80,7 @@ pnpm install --force
 
 ```bash
 # 初始化数据库（首次运行必做）
-cd packages/backend
+cd packages/api
 pnpm exec prisma migrate dev --name init
 
 # 返回项目根目录
@@ -96,8 +102,8 @@ pnpm frontend:dev
 pnpm build
 
 # 构建产物位于：
-# - packages/backend/dist/
-# - packages/frontend/dist/
+# - packages/api/dist/
+# - apps/web/dist/
 ```
 
 ## MVP 功能范围（阶段一）
@@ -126,7 +132,7 @@ pnpm build
 
 **解决方案**：
 ```bash
-cd packages/backend
+cd packages/api
 pnpm exec prisma migrate dev --name init
 ```
 

@@ -1,6 +1,9 @@
 import Fastify from 'fastify';
+import type { FastifyPluginAsync } from 'fastify';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
+import swagger from '@fastify/swagger';
+import swaggerUi from '@fastify/swagger-ui';
 import { authRoutes } from './modules/auth/routes.js';
 import { domainRoutes } from './modules/domain/routes.js';
 import { balanceWheelRoutes } from './modules/balance-wheel/routes.js';
@@ -18,6 +21,15 @@ import { readingRoutes } from './modules/reading/routes.js';
 import { contactRoutes } from './modules/contact/routes.js';
 import { healthRoutes } from './modules/health/routes.js';
 import { workflowRoutes } from './modules/workflow/routes.js';
+import { AuthenticatedUser } from '@meos/shared';
+export type { AuthenticatedUser };
+
+// 扩展 Fastify 类型
+declare module 'fastify' {
+  interface FastifyRequest {
+    user: AuthenticatedUser;
+  }
+}
 
 const server = Fastify({
   logger: true,
@@ -27,6 +39,21 @@ await server.register(cors, {
   origin: true,
 });
 
+await server.register(swagger, {
+  openapi: {
+    info: {
+      title: 'MeOS API',
+      description: '人生管理系统 API 文档',
+      version: '0.1.0',
+    },
+    servers: [{ url: 'http://localhost:3001' }],
+  },
+});
+
+await server.register(swaggerUi, {
+  routePrefix: '/docs',
+});
+
 await server.register(jwt, {
   secret: process.env.JWT_SECRET || 'meos-super-secret-key-change-in-production',
 });
@@ -34,12 +61,12 @@ await server.register(jwt, {
 const isDev = process.env.NODE_ENV === 'development';
 server.decorate('authenticate', async function (request, reply) {
   if (isDev) {
-    (request as any).user = { userId: 'mock-user-1' };
+    request.user = { userId: 'mock-user-1' };
     return;
   }
   try {
     await request.jwtVerify();
-  } catch (err) {
+  } catch (_err) {
     return reply.code(401).send({ error: '认证失败' });
   }
 });

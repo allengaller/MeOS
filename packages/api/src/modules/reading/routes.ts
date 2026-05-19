@@ -38,7 +38,7 @@ export const readingRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const query = listReadingSchema.parse(request.query);
       const where: any = { userId };
       if (query.status) where.status = query.status;
@@ -62,7 +62,7 @@ export const readingRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const data = createReadingSchema.parse(request.body);
       const item = await prisma.readingItem.create({
         data: { ...data, userId },
@@ -81,7 +81,7 @@ export const readingRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id } = request.params as { id: string };
       const item = await prisma.readingItem.findFirst({
         where: { id, userId },
@@ -100,7 +100,7 @@ export const readingRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id } = request.params as { id: string };
       const data = updateReadingSchema.parse(request.body);
 
@@ -144,7 +144,7 @@ export const readingRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id } = request.params as { id: string };
       const result = await prisma.readingItem.deleteMany({
         where: { id, userId },

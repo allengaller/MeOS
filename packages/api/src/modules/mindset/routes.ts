@@ -24,7 +24,7 @@ export const mindsetRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const slogans = await prisma.mindsetSlogan.findMany({
         where: { userId },
         orderBy: [
@@ -44,7 +44,7 @@ export const mindsetRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const data = createMindsetSchema.parse(request.body);
 
       const slogan = await prisma.mindsetSlogan.create({
@@ -69,7 +69,7 @@ export const mindsetRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id } = request.params as { id: string };
       const data = updateMindsetSchema.parse(request.body);
 
@@ -98,7 +98,7 @@ export const mindsetRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id } = request.params as { id: string };
 
       const slogan = await prisma.mindsetSlogan.deleteMany({

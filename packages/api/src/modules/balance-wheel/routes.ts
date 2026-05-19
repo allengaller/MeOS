@@ -18,7 +18,7 @@ export const balanceWheelRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const { scores } = scoreSchema.parse(request.body);
 
         const createdScores = await Promise.all(
@@ -50,7 +50,7 @@ export const balanceWheelRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const { limit = 10 } = request.query as { limit?: number };
 
         const scores = await prisma.balanceWheelScore.findMany({
@@ -73,7 +73,7 @@ export const balanceWheelRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const { id } = request.params as { id: string };
 
         const score = await prisma.balanceWheelScore.findFirst({
@@ -98,7 +98,7 @@ export const balanceWheelRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const { id } = request.params as { id: string };
         const data = scoreSchema.partial().parse(request.body);
 
@@ -131,7 +131,7 @@ export const balanceWheelRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const { id } = request.params as { id: string };
 
         const result = await prisma.balanceWheelScore.deleteMany({

@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { Plus, Target, Trash2, ArrowLeft, Sparkles, Flag, CheckSquare, Repeat } from 'lucide-react';
 import api from '../../lib/api';
 import WorkflowCanvas from '../../components/workflow/WorkflowCanvas';
-import { Node, Edge, Connection } from '@xyflow/react';
+import { Node, Edge, Connection, NodeChange, EdgeChange } from '@xyflow/react';
 
 interface Vision {
   id: string;
@@ -222,14 +222,14 @@ export default function Workflow() {
     }
   };
 
-  const onNodesChange = useCallback((changes: any) => {
+  const onNodesChange = useCallback((changes: NodeChange<Node>[]) => {
     setNodes((nds) => {
       const updated = applyNodeChanges(changes, nds);
       return updated;
     });
   }, []);
 
-  const onEdgesChange = useCallback((changes: any) => {
+  const onEdgesChange = useCallback((changes: EdgeChange<Edge>[]) => {
     setEdges((eds) => applyEdgeChanges(changes, eds));
   }, []);
 
@@ -426,10 +426,10 @@ export default function Workflow() {
             </div>
             <div className="flex-1">
               <WorkflowCanvas
-                nodes={nodes as any}
+                nodes={nodes}
                 edges={edges}
-                onNodesChange={onNodesChange as any}
-                onEdgesChange={onEdgesChange as any}
+                onNodesChange={onNodesChange}
+                onEdgesChange={onEdgesChange}
                 onConnect={onConnect}
               />
             </div>

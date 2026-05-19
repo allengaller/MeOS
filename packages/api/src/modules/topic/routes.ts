@@ -43,7 +43,7 @@ export const topicRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
 
         const topics = await prisma.topic.findMany({
           where: { userId },
@@ -76,7 +76,7 @@ export const topicRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const data = createTopicSchema.parse(request.body);
 
         const topic = await prisma.topic.create({
@@ -110,7 +110,7 @@ export const topicRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const { id } = request.params as { id: string };
 
         const topic = await prisma.topic.findFirst({
@@ -143,7 +143,7 @@ export const topicRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const { id } = request.params as { id: string };
         const data = updateTopicSchema.parse(request.body);
 
@@ -172,7 +172,7 @@ export const topicRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const { id } = request.params as { id: string };
 
         const existing = await prisma.topic.findFirst({ where: { id, userId } });
@@ -194,7 +194,7 @@ export const topicRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const { id } = request.params as { id: string };
         const data = createNoteSchema.parse(request.body);
 
@@ -227,7 +227,7 @@ export const topicRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
     handler: async (request, reply) => {
       try {
-        const userId = (request.user as any).userId;
+        const userId = request.user.userId;
         const { topicId, noteId } = request.params as { topicId: string; noteId: string };
 
         const note = await prisma.topicNote.findFirst({

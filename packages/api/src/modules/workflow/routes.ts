@@ -45,7 +45,7 @@ export const workflowRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const workflows = await prisma.workflow.findMany({
         where: { userId },
         orderBy: { createdAt: 'desc' },
@@ -65,7 +65,7 @@ export const workflowRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const data = createWorkflowSchema.parse(request.body);
 
       const workflow = await prisma.workflow.create({
@@ -86,7 +86,7 @@ export const workflowRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id } = request.params as { id: string };
 
       const workflow = await prisma.workflow.findFirst({
@@ -113,7 +113,7 @@ export const workflowRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id } = request.params as { id: string };
       const data = updateWorkflowSchema.parse(request.body);
 
@@ -141,7 +141,7 @@ export const workflowRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id } = request.params as { id: string };
 
       const result = await prisma.workflow.deleteMany({ where: { id, userId } });
@@ -160,7 +160,7 @@ export const workflowRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id } = request.params as { id: string };
       const data = createStepSchema.parse(request.body);
 
@@ -187,7 +187,7 @@ export const workflowRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id, stepId } = request.params as { id: string; stepId: string };
       const data = updateStepSchema.parse(request.body);
 
@@ -215,7 +215,7 @@ export const workflowRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id, stepId } = request.params as { id: string; stepId: string };
 
       const workflow = await prisma.workflow.findFirst({ where: { id, userId } });
@@ -236,7 +236,7 @@ export const workflowRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id } = request.params as { id: string };
       const data = createConnectionSchema.parse(request.body);
 
@@ -263,7 +263,7 @@ export const workflowRoutes: FastifyPluginAsync = async (fastify) => {
     onRequest: [fastify.authenticate],
   }, async (request, reply) => {
     try {
-      const userId = (request.user as any).userId;
+      const userId = request.user.userId;
       const { id, connId } = request.params as { id: string; connId: string };
 
       const workflow = await prisma.workflow.findFirst({ where: { id, userId } });

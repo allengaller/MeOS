@@ -5,8 +5,19 @@ import {
   MiniMap,
   Node,
   Edge,
+  NodeChange,
+  EdgeChange,
+  Connection,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+
+interface WorkflowCanvasProps {
+  nodes: Node[];
+  edges: Edge[];
+  onNodesChange: (changes: NodeChange<Node>[]) => void;
+  onEdgesChange: (changes: EdgeChange<Edge>[]) => void;
+  onConnect: (connection: Connection) => void;
+}
 
 export default function WorkflowCanvas({
   nodes,
@@ -14,13 +25,7 @@ export default function WorkflowCanvas({
   onNodesChange,
   onEdgesChange,
   onConnect,
-}: {
-  nodes: Node[];
-  edges: Edge[];
-  onNodesChange: (changes: any[]) => void;
-  onEdgesChange: (changes: any[]) => void;
-  onConnect: (connection: any) => void;
-}) {
+}: WorkflowCanvasProps) {
   return (
     <div className="w-full h-full">
       <ReactFlow
