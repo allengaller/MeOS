@@ -1,5 +1,8 @@
+import { useState } from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Menu, X, LogOut } from 'lucide-react';
 import { useAuthStore } from '../stores/authStore';
+import ToastContainer from './ToastContainer';
 
 interface NavItem {
   label: string;
@@ -36,16 +39,59 @@ const navItems: NavItem[] = [
 ];
 
 export default function Layout() {
-  const { user } = useAuthStore();
+  const { user, logout } = useAuthStore();
   const location = useLocation();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const isActive = (path: string) => location.pathname.startsWith(path);
 
+  const handleLogout = () => {
+    logout();
+    window.location.href = '/login';
+  };
+
   return (
     <div className="min-h-screen flex" style={{ backgroundColor: 'var(--color-bg)' }}>
-      {/* Sidebar */}
+      {/* Mobile Header */}
+      <header
+        className="md:hidden fixed top-0 left-0 right-0 z-30 h-14 flex items-center justify-between px-4"
+        style={{
+          backgroundColor: 'var(--color-surface)',
+          borderBottom: '1px solid var(--color-border-light)',
+        }}
+      >
+        <Link
+          to="/"
+          className="text-lg font-medium tracking-tight"
+          style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text-primary)' }}
+        >
+          MeOS
+        </Link>
+        <button
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="p-2 rounded-lg hover:bg-slate-100 transition-colors"
+          aria-label={sidebarOpen ? '关闭菜单' : '打开菜单'}
+        >
+          {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+        </button>
+      </header>
+
+      {/* Mobile Overlay */}
+      {sidebarOpen && (
+        <div
+          className="md:hidden fixed inset-0 z-40 bg-black/30"
+          onClick={() => setSidebarOpen(false)}
+        />
+      )}
+
+      {/* Sidebar - Responsive Drawer */}
       <aside
-        className="w-56 flex flex-col fixed inset-y-0 left-0 z-40"
+        className={`
+          fixed inset-y-0 left-0 z-50 w-56 flex flex-col
+          transform transition-transform duration-200 ease-out
+          md:translate-x-0 md:static md:z-auto
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}
         style={{
           backgroundColor: 'var(--color-surface)',
           borderRight: '1px solid var(--color-border-light)',
@@ -53,24 +99,28 @@ export default function Layout() {
       >
         {/* Logo */}
         <div
-          className="h-14 flex items-center px-5"
+          className="h-14 flex items-center justify-between px-5"
           style={{ borderBottom: '1px solid var(--color-border-light)' }}
         >
           <Link
             to="/"
             className="text-lg font-medium tracking-tight"
-            style={{
-              fontFamily: 'var(--font-display)',
-              color: 'var(--color-text-primary)',
-            }}
+            style={{ fontFamily: 'var(--font-display)', color: 'var(--color-text-primary)' }}
+            onClick={() => setSidebarOpen(false)}
           >
             MeOS
           </Link>
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="md:hidden p-1 hover:bg-slate-100 rounded"
+            aria-label="关闭"
+          >
+            <X className="w-4 h-4" />
+          </button>
         </div>
 
         {/* Navigation */}
         <nav className="flex-1 overflow-y-auto py-4 px-3">
-          {/* Today */}
           <Link
             to="/"
             className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all mb-2 ${
@@ -79,6 +129,7 @@ export default function Layout() {
                 : 'text-[var(--color-text-secondary)] hover:text-[var(--color-text-primary)] hover:bg-[var(--color-bg-secondary)]'
             }`}
             style={location.pathname === '/' || location.pathname === '/today' ? { backgroundColor: 'var(--color-text-primary)' } : {}}
+            onClick={() => setSidebarOpen(false)}
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
@@ -86,7 +137,6 @@ export default function Layout() {
             <span>今日</span>
           </Link>
 
-          {/* Nav Items */}
           <div className="space-y-1">
             {navItems.map((item) => {
               const active = isActive(item.path);
@@ -100,6 +150,7 @@ export default function Layout() {
                       : 'text-[var(--color-text-tertiary)] hover:text-[var(--color-text-secondary)] hover:bg-[var(--color-bg-secondary)]'
                   }`}
                   style={active ? { backgroundColor: 'var(--color-bg-secondary)' } : {}}
+                  onClick={() => setSidebarOpen(false)}
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d={item.icon} />
@@ -134,16 +185,26 @@ export default function Layout() {
                 {user?.email || 'me@meos.app'}
               </p>
             </div>
+            <button
+              onClick={handleLogout}
+              className="p-1.5 rounded hover:bg-slate-100 transition-colors"
+              title="退出登录"
+            >
+              <LogOut className="w-4 h-4 text-slate-400" />
+            </button>
           </div>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 ml-56">
-        <div className="max-w-5xl mx-auto px-8 py-10">
+      <main className="flex-1 md:ml-56">
+        <div className="max-w-5xl mx-auto px-4 md:px-8 py-10 pt-16 md:pt-10">
           <Outlet />
         </div>
       </main>
+
+      {/* Toast Container */}
+      <ToastContainer />
     </div>
   );
 }

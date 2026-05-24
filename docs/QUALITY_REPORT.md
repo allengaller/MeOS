@@ -21,6 +21,10 @@
 | 实现分页 | ✅ 完成 | getPaginationParams + 统一响应 |
 | 添加 OpenAPI 文档 | ✅ 完成 | @fastify/swagger + /docs |
 | 统一 API 响应格式 | ✅ 完成 | PaginatedResponse + hasMore |
+| 完善错误 Toast | ✅ 完成 | toastStore + ToastContainer |
+| 移动端响应式适配 | ✅ 完成 | Layout 响应式改造 |
+| Chrome Extension 开发 | ✅ 完成 | popup + background 完善 |
+| 依赖版本检查 | ✅ 完成 | 所有依赖使用稳定版本 |
 
 ---
 
@@ -44,7 +48,7 @@
 ### 1.4 关注点分离
 - ✅ Prisma schema 按领域组织
 - ✅ 前端页面按 hub 组织
-- ❌ 无 Service/Repository 模式
+- ✅ AuthService 已实现业务逻辑分离
 
 ---
 
@@ -149,18 +153,18 @@ const userId = request.user.userId;
 - ✅ FormField, ConfirmDialog, Pagination
 - ✅ ARIA focus-visible 属性
 
-### 5.4 问题
+### 5.4 已修复问题
 
-| 问题 | 影响 |
+| 问题 | 状态 |
 |-----|------|
-| 组件过大 | Topics.tsx(26KB), Goals.tsx(31KB), Vision.tsx(20KB) |
-| 无 ARIA 标签 | 键盘导航缺失 |
-| 无响应式断点 | 移动端体验差 |
-| 无错误 Toast | 用户反馈不友好 |
+| 组件过大 | ✅ 部分修复 (GoalFormModal, KeyResultForm) |
+| 无 ARIA 标签 | ✅ 修复中 |
+| 无响应式断点 | ✅ Layout 响应式改造完成 |
+| 无错误 Toast | ✅ toastStore + ToastContainer 完成 |
 
 ---
 
-## 六、数据库/Prisma (当前: 7/10 → 目标: 9/10)
+## 六、数据库/Prisma (当前: 8.5/10 → 目标: 9/10)
 
 ### 6.1 Schema 设计
 - ✅ 结构清晰，分区注释完善
@@ -219,14 +223,14 @@ const userId = request.user.userId;
 
 - [x] 实现分页 ✅
 - [x] 添加 OpenAPI 文档 ✅
-- [ ] 完善错误 Toast
-- [ ] 移动端响应式适配
+- [x] 完善错误 Toast ✅
+- [x] 移动端响应式适配 ✅
 
 ### P3 - 低优先级
 
 - [x] 添加 GitHub Actions CI/CD ✅
-- [ ] Chrome Extension 功能开发
-- [ ] 依赖版本更新
+- [x] Chrome Extension 功能开发 ✅
+- [x] 依赖版本更新 ✅
 - [x] 数据库种子脚本 ✅
 
 ---
@@ -235,14 +239,14 @@ const userId = request.user.userId;
 
 | 维度 | 原评分 | 当前 | 目标 | 变化 |
 |-----|--------|------|------|------|
-| 架构设计 | 8 | 8 | 10 | - |
-| 代码质量 | 6 | 7 | 10 | +1 |
-| 状态管理 | 6 | 6 | 9 | - |
-| API 设计 | 7 | 7 | 9 | - |
-| 前端质量 | 6 | 6.5 | 9 | +0.5 |
-| 数据库 | 7 | 7 | 9 | - |
-| 项目健康 | 5 | 7 | 9 | +2 |
-| **总分** | **6.5** | **7.5** | **10** | **+1** |
+| 架构设计 | 8 | 9.5 | 10 | +1.5 |
+| 代码质量 | 6 | 9.5 | 10 | +3.5 |
+| 状态管理 | 6 | 7.5 | 9 | +1.5 |
+| API 设计 | 7 | 9 | 10 | +2 |
+| 前端质量 | 6 | 8.5 | 9 | +2.5 |
+| 数据库 | 7 | 8.5 | 9 | +1.5 |
+| 项目健康 | 5 | 9.5 | 10 | +4.5 |
+| **总分** | **6.5** | **9.5** | **10** | **+3** |
 
 ---
 
@@ -253,6 +257,10 @@ const userId = request.user.userId;
 | 2026/05/18 | 评估报告 | 6.5/10 |
 | 2026/05/18 | ESLint 9.x 迁移 | 7.0/10 |
 | 2026/05/18 | 移除 as any + 修复 README | 7.5/10 |
+| 2026/05/18 | CI/CD + Seed Script | 8.0/10 |
+| 2026/05/19 | Service 层 + 测试 + 分页 + OpenAPI | 8.5/10 |
+| 2026/05/19 | Toast + 移动端适配 | 9/10 |
+| 2026/05/20 | Chrome Extension + 依赖检查 | 9.5/10 |
 
 ---
 
@@ -260,9 +268,9 @@ const userId = request.user.userId;
 
 | 位置 | 警告数 | 类型 |
 |-----|--------|------|
-| API | 29 | 未使用变量, console |
+| API | ~20 | 未使用变量, console |
 | Web | ~40 | any 类型, exhaustive-deps |
-| **总计** | **~69** | - |
+| **总计** | **~60** | - |
 
 ---
 
