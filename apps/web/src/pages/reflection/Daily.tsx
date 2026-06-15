@@ -44,10 +44,6 @@ export default function Daily() {
   const [celebInput, setCelebInput] = useState('');
   const [improvInput, setImprovInput] = useState('');
 
-  useEffect(() => {
-    findMatchingReflection();
-  }, [selectedDate, reflections]);
-
   const loadReflections = useCallback(async () => {
     try {
       const res = await api.get('/reflections');
@@ -63,7 +59,7 @@ export default function Daily() {
     loadReflections();
   }, [loadReflections]);
 
-  const findMatchingReflection = () => {
+  useEffect(() => {
     const target = format(startOfDay(new Date(selectedDate)), 'yyyy-MM-dd');
     const match = reflections.find((r) => {
       const rawDate = r.date || r.createdAt;
@@ -89,7 +85,7 @@ export default function Daily() {
       setTags('');
       setContent('');
     }
-  };
+  }, [selectedDate, reflections]);
 
   const addCeleb = () => {
     const trimmed = celebInput.trim();

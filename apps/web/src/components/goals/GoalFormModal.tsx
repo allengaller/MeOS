@@ -1,4 +1,4 @@
-import { GoalForm, Domain } from './Goals';
+import { GoalForm, Domain } from '../../pages/direction/Goals';
 
 interface GoalFormModalProps {
   form: GoalForm;

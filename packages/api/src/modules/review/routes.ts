@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 
 const reviewSchema = z.object({
@@ -53,7 +54,7 @@ export const reviewRoutes: FastifyPluginAsync = async (fastify) => {
         const userId = request.user.userId;
         const { period, page = 1, limit = 20 } = request.query as { period?: string; page?: number; limit?: number };
 
-        const where: any = { userId };
+        const where: Prisma.PeriodicReviewWhereInput = { userId };
         if (period) where.period = period;
 
         const skip = (Number(page) - 1) * Number(limit);

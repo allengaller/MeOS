@@ -275,7 +275,7 @@ interface Subscription {
   autoRenew: boolean;
   websiteUrl?: string;
   notes?: string;
-  config?: Record<string, any>;
+  config?: Record<string, unknown>;
   quotas: QuotaDefinition[];
   createdAt: string;
   updatedAt: string;
@@ -310,10 +310,40 @@ interface QuotaUsage {
   usedAmount: number;
 }
 
+interface SubscriptionDashboardSummary {
+  subscriptions: {
+    id: string;
+    name: string;
+    provider: string;
+    monthlyCost: number;
+    currency: string;
+    overallUtilization: number;
+    quotaUtilization: unknown[];
+    daysUntilRenewal: number;
+    isActive: boolean;
+    autoRenew: boolean;
+  }[];
+  stats: {
+    totalMonthlySpend: number;
+    activeCount: number;
+    nearLimitCount: number;
+    criticalCount: number;
+  };
+}
+
 let dbInstance: IDBDatabase | null = null;
 
 function generateId(): string {
   return Date.now().toString(36) + Math.random().toString(36).substring(2);
+}
+
+function omitPassword(user: User): Omit<User, 'password'> {
+  return {
+    id: user.id,
+    email: user.email,
+    name: user.name,
+    createdAt: user.createdAt,
+  };
 }
 
 async function openDB(): Promise<IDBDatabase> {
@@ -516,9 +546,8 @@ export const localDB = {
       if (!user) {
         throw { response: { data: { error: '邮箱或密码错误' } } };
       }
-      const { password: _, ...userWithoutPassword } = user;
       currentUserId = user.id;
-      return { user: userWithoutPassword, token: 'local-token-' + user.id };
+      return { user: omitPassword(user), token: 'local-token-' + user.id };
     },
 
     async register(name: string, email: string, password: string): Promise<{ user: Omit<User, 'password'>; token: string }> {
@@ -546,8 +575,7 @@ export const localDB = {
       currentUserId = newUser.id;
       await createDefaultDomains(newUser.id);
 
-      const { password: _, ...userWithoutPassword } = newUser;
-      return { user: userWithoutPassword, token: 'local-token-' + newUser.id };
+      return { user: omitPassword(newUser), token: 'local-token-' + newUser.id };
     },
 
     async getCurrentUser(): Promise<Omit<User, 'password'> | null> {
@@ -560,8 +588,7 @@ export const localDB = {
         request.onsuccess = () => {
           const user = request.result;
           if (user) {
-            const { password: _, ...userWithoutPassword } = user;
-            resolve(userWithoutPassword);
+            resolve(omitPassword(user));
           } else {
             resolve(null);
           }
@@ -696,18 +723,19 @@ export const localDB = {
       return { reflections };
     },
 
-    async create(data: any): Promise<{ reflection: Reflection }> {
+    async create(data: Record<string, unknown>): Promise<{ reflection: Reflection }> {
       const now = new Date().toISOString();
+      const d = data as Partial<Reflection>;
       const reflection: Reflection = {
         id: generateId(),
         userId: currentUserId || '',
-        content: data.content || '',
-        date: data.date || now,
-        mood: data.mood,
-        celebrations: data.celebrations,
-        improvements: data.improvements,
-        tomorrow: data.tomorrow,
-        tags: data.tags,
+        content: d.content || '',
+        date: d.date || now,
+        mood: d.mood,
+        celebrations: d.celebrations,
+        improvements: d.improvements,
+        tomorrow: d.tomorrow,
+        tags: d.tags,
         createdAt: now,
         updatedAt: now,
       };
@@ -742,19 +770,20 @@ export const localDB = {
       return { reviews };
     },
 
-    async create(data: any): Promise<{ review: Review }> {
+    async create(data: Record<string, unknown>): Promise<{ review: Review }> {
       const now = new Date().toISOString();
+      const d = data as Partial<Review>;
       const review: Review = {
         id: generateId(),
         userId: currentUserId || '',
-        period: data.period || 'weekly',
-        content: data.content || '',
-        startDate: data.startDate,
-        endDate: data.endDate,
-        highlights: data.highlights,
-        lowlights: data.lowlights,
-        learnings: data.learnings,
-        nextActions: data.nextActions,
+        period: d.period || 'weekly',
+        content: d.content || '',
+        startDate: d.startDate,
+        endDate: d.endDate,
+        highlights: d.highlights,
+        lowlights: d.lowlights,
+        learnings: d.learnings,
+        nextActions: d.nextActions,
         createdAt: now,
         updatedAt: now,
       };
@@ -789,15 +818,16 @@ export const localDB = {
       return { insights };
     },
 
-    async create(data: any): Promise<{ insight: Insight }> {
+    async create(data: Record<string, unknown>): Promise<{ insight: Insight }> {
       const now = new Date().toISOString();
+      const d = data as Partial<Insight>;
       const insight: Insight = {
         id: generateId(),
         userId: currentUserId || '',
-        title: data.title || '',
-        content: data.content || '',
-        tags: data.tags ? JSON.stringify(data.tags) : null,
-        category: data.category || null,
+        title: d.title || '',
+        content: d.content || '',
+        tags: d.tags ? JSON.stringify(d.tags) : null,
+        category: d.category || null,
         createdAt: now,
         updatedAt: now,
       };
@@ -911,8 +941,8 @@ export const localDB = {
         userId: currentUserId || '',
         title: data.title,
         description: data.description,
-        priority: (data.priority as any) || 'medium',
-        status: (data.status as any) || 'inbox',
+        priority: (data.priority as Todo['priority']) || 'medium',
+        status: (data.status as Todo['status']) || 'inbox',
         createdAt: new Date().toISOString(),
       };
       await add('todos', todo);
@@ -952,7 +982,7 @@ export const localDB = {
         userId: currentUserId || '',
         title: data.title,
         description: data.description,
-        frequency: (data.frequency as any) || 'daily',
+        frequency: (data.frequency as Habit['frequency']) || 'daily',
         color: data.color || '#3B82F6',
         isActive: true,
         order: 0,
@@ -1009,19 +1039,20 @@ export const localDB = {
       return { goals };
     },
 
-    async create(data: any): Promise<{ goal: Goal }> {
+    async create(data: Record<string, unknown>): Promise<{ goal: Goal }> {
       const now = new Date().toISOString();
+      const d = data as Partial<Goal>;
       const goal: Goal = {
         id: generateId(),
         userId: currentUserId || '',
-        title: data.title || '',
-        description: data.description,
-        domainId: data.domainId,
-        status: data.status || 'active',
-        priority: data.priority || 'medium',
-        startDate: data.startDate,
-        endDate: data.endDate,
-        deadline: data.deadline,
+        title: d.title || '',
+        description: d.description,
+        domainId: d.domainId,
+        status: d.status || 'active',
+        priority: d.priority || 'medium',
+        startDate: d.startDate,
+        endDate: d.endDate,
+        deadline: d.deadline,
         createdAt: now,
         updatedAt: now,
       };
@@ -1051,17 +1082,18 @@ export const localDB = {
       }
     },
 
-    async createKeyResult(goalId: string, data: any): Promise<{ keyResult: KeyResult }> {
+    async createKeyResult(goalId: string, data: Record<string, unknown>): Promise<{ keyResult: KeyResult }> {
       const now = new Date().toISOString();
+      const d = data as Partial<KeyResult>;
       const kr: KeyResult = {
         id: generateId(),
         goalId,
         userId: currentUserId || '',
-        title: data.title || '',
-        targetValue: data.targetValue || 0,
-        currentValue: data.currentValue || 0,
-        unit: data.unit || '',
-        order: data.order || 0,
+        title: d.title || '',
+        targetValue: d.targetValue || 0,
+        currentValue: d.currentValue || 0,
+        unit: d.unit || '',
+        order: d.order || 0,
         createdAt: now,
         updatedAt: now,
       };
@@ -1163,20 +1195,21 @@ export const localDB = {
       return { contacts };
     },
 
-    async create(data: any): Promise<{ contact: Contact }> {
+    async create(data: Record<string, unknown>): Promise<{ contact: Contact }> {
       const now = new Date().toISOString();
+      const d = data as Partial<Contact>;
       const contact: Contact = {
         id: generateId(),
         userId: currentUserId || '',
-        name: data.name || '',
-        email: data.email,
-        phone: data.phone,
-        role: data.role,
-        company: data.company,
-        tags: data.tags || [],
-        notes: data.notes,
-        lastContact: data.lastContact,
-        domainId: data.domainId,
+        name: d.name || '',
+        email: d.email,
+        phone: d.phone,
+        role: d.role,
+        company: d.company,
+        tags: d.tags || [],
+        notes: d.notes,
+        lastContact: d.lastContact,
+        domainId: d.domainId,
         createdAt: now,
         updatedAt: now,
       };
@@ -1225,21 +1258,22 @@ export const localDB = {
       return { items };
     },
 
-    async create(data: any): Promise<{ item: ReadingItem }> {
+    async create(data: Record<string, unknown>): Promise<{ item: ReadingItem }> {
       const now = new Date().toISOString();
+      const d = data as Partial<ReadingItem>;
       const item: ReadingItem = {
         id: generateId(),
         userId: currentUserId || '',
-        title: data.title || '',
-        author: data.author,
-        type: data.type || 'book',
-        status: data.status || 'want',
-        url: data.url,
-        note: data.note,
-        rating: data.rating,
-        topicId: data.topicId,
-        startDate: data.startDate,
-        endDate: data.endDate,
+        title: d.title || '',
+        author: d.author,
+        type: d.type || 'book',
+        status: d.status || 'want',
+        url: d.url,
+        note: d.note,
+        rating: d.rating,
+        topicId: d.topicId,
+        startDate: d.startDate,
+        endDate: d.endDate,
         createdAt: now,
         updatedAt: now,
       };
@@ -1275,17 +1309,18 @@ export const localDB = {
       return { records: records.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()) };
     },
 
-    async create(data: any): Promise<{ record: HealthRecord }> {
+    async create(data: Record<string, unknown>): Promise<{ record: HealthRecord }> {
       const now = new Date().toISOString();
+      const d = data as Partial<HealthRecord>;
       const record: HealthRecord = {
         id: generateId(),
         userId: currentUserId || '',
-        type: data.type || 'weight',
-        value: data.value || 0,
-        unit: data.unit || '',
-        note: data.note,
-        date: data.date || now,
-        recordedAt: data.recordedAt || now,
+        type: d.type || 'weight',
+        value: d.value || 0,
+        unit: d.unit || '',
+        note: d.note,
+        date: d.date || now,
+        recordedAt: d.recordedAt || now,
         createdAt: now,
       };
       await add('healthRecords', record);
@@ -1486,7 +1521,7 @@ export const localDB = {
       return { monthlyUsage: usage };
     },
 
-    async getDashboardSummary(): Promise<any> {
+    async getDashboardSummary(): Promise<SubscriptionDashboardSummary> {
       const subscriptions = currentUserId
         ? await getByIndex<Subscription>('subscriptions', 'userId', currentUserId)
         : [];
@@ -1561,16 +1596,16 @@ export const localDB = {
       await remove('workflows', id);
     },
 
-    async getOne(id: string): Promise<{ workflow: Workflow }> {
+    async getOne(id: string): Promise<{ workflow: Workflow | null }> {
       const db = await openDB();
-      const workflow = await new Promise<Workflow>((resolve, reject) => {
+      const workflow = await new Promise<Workflow | undefined>((resolve, reject) => {
         const tx = db.transaction('workflows', 'readonly');
         const store = tx.objectStore('workflows');
         const request = store.get(id);
         request.onsuccess = () => resolve(request.result);
         request.onerror = () => reject(request.error);
       });
-      if (!workflow) return { workflow: null as any };
+      if (!workflow) return { workflow: null };
 
       const [steps, connections] = await Promise.all([
         getByIndex<WorkflowStep>('workflowSteps', 'workflowId', id),

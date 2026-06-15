@@ -37,7 +37,7 @@ interface StatCardProps {
   accentColor?: string;
 }
 
-function StatCard({ label, value, accent:_accent, accentColor = 'var(--color-text-primary)' }: StatCardProps) {
+function StatCard({ label, value, accentColor = 'var(--color-text-primary)' }: StatCardProps) {
   return (
     <div className="relative overflow-hidden">
       <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, var(--color-bg-secondary) 0%, var(--color-surface) 100%)' }} />
@@ -197,7 +197,7 @@ function SubscriptionModal({ subscription, onSave, onClose }: {
   const [form, setForm] = useState<SubscriptionFormData>({
     name: subscription?.name || '',
     provider: subscription?.provider || '',
-    billingCycle: (subscription?.billingCycle as any) || 'monthly',
+    billingCycle: (subscription?.billingCycle as SubscriptionFormData['billingCycle']) || 'monthly',
     costPerCycle: subscription?.costPerCycle || 0,
     currency: subscription?.currency || 'USD',
     startDate: subscription?.startDate?.split('T')[0] || new Date().toISOString().split('T')[0],
@@ -273,7 +273,7 @@ function SubscriptionModal({ subscription, onSave, onClose }: {
               </label>
               <select
                 value={form.billingCycle}
-                onChange={(e) => setForm({ ...form, billingCycle: e.target.value as any })}
+                onChange={(e) => setForm({ ...form, billingCycle: e.target.value as SubscriptionFormData['billingCycle'] })}
                 className="w-full px-4 py-3 bg-slate-50/50 border border-slate-100 rounded-lg text-slate-900 focus:outline-none focus:border-slate-200 focus:bg-white transition-all text-sm appearance-none cursor-pointer"
               >
                 <option value="monthly">月付</option>
@@ -461,7 +461,7 @@ export default function Subscriptions() {
 
   useEffect(() => {
     fetchDashboard();
-  }, []);
+  }, [fetchDashboard]);
 
   const handleSaveSub = async (data: SubscriptionFormData) => {
     if (editingSub) {
@@ -596,7 +596,7 @@ export default function Subscriptions() {
       {/* Usage Modal - Record Usage */}
       {showSubModal && (
         <SubscriptionModal
-          subscription={editingSub as any}
+          subscription={editingSub}
           onSave={handleSaveSub}
           onClose={() => { setShowSubModal(false); setEditingSub(undefined); }}
         />

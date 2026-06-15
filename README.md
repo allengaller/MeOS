@@ -81,7 +81,10 @@ pnpm install --force
 ```bash
 # 初始化数据库（首次运行必做）
 cd packages/api
-pnpm exec prisma migrate dev --name init
+pnpm db:push
+
+# 可选：填充示例数据
+pnpm db:seed
 
 # 返回项目根目录
 cd ../..
@@ -93,7 +96,7 @@ pnpm dev
 # 仅启动后端
 pnpm backend:dev
 # 仅启动前端
-pnpm frontend:dev
+pnpm web:dev
 ```
 
 ### 构建

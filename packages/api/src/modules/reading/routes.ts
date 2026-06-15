@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 
 const readingTypes = ['book', 'article', 'video', 'podcast', 'course'] as const;
@@ -40,7 +41,7 @@ export const readingRoutes: FastifyPluginAsync = async (fastify) => {
     try {
       const userId = request.user.userId;
       const query = listReadingSchema.parse(request.query);
-      const where: any = { userId };
+      const where: Prisma.ReadingItemWhereInput = { userId };
       if (query.status) where.status = query.status;
       if (query.topicId) where.topicId = query.topicId;
 
@@ -104,7 +105,7 @@ export const readingRoutes: FastifyPluginAsync = async (fastify) => {
       const { id } = request.params as { id: string };
       const data = updateReadingSchema.parse(request.body);
 
-      const updateData: any = { ...data };
+      const updateData: Prisma.ReadingItemUpdateInput = { ...data };
 
       if (data.status === 'reading') {
         const existing = await prisma.readingItem.findFirst({ where: { id, userId } });

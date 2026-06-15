@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 
 const reflectionSchema = z.object({
@@ -57,7 +58,7 @@ export const reflectionRoutes: FastifyPluginAsync = async (fastify) => {
         const userId = request.user.userId;
         const { type, limit = 20, page = 1 } = request.query as { type?: string; limit?: number; page?: number };
 
-        const where: any = { userId };
+        const where: Prisma.ReflectionWhereInput = { userId };
         if (type) where.type = type;
 
         const skip = (Number(page) - 1) * Number(limit);

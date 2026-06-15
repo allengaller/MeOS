@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 
 const relations = ['friend', 'colleague', 'mentor', 'family', 'other'] as const;
@@ -48,7 +49,7 @@ export const contactRoutes: FastifyPluginAsync = async (fastify) => {
     try {
       const userId = request.user.userId;
       const query = listContactSchema.parse(request.query);
-      const where: any = { userId };
+      const where: Prisma.ContactWhereInput = { userId };
       if (query.relation) where.relation = query.relation;
 
       if (query.needsContact) {

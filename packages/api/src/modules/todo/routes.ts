@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 
 const statusEnum = z.enum(['inbox', 'todo', 'doing', 'done', 'cancelled']);
@@ -52,15 +53,19 @@ export const todoRoutes: FastifyPluginAsync = async (fastify) => {
         const userId = request.user.userId;
         const query = listQuerySchema.parse(request.query);
 
-        const where: any = { userId };
+        const where: Prisma.TodoWhereInput = { userId };
 
         if (query.status) {
           const statuses = query.status.split(',');
           where.status = { in: statuses };
         }
         if (query.priority) where.priority = query.priority;
-        if (query.dueBefore) where.dueDate = { ...where.dueDate, lte: new Date(query.dueBefore) };
-        if (query.dueAfter) where.dueDate = { ...where.dueDate, gte: new Date(query.dueAfter) };
+        const dueDateFilter: Prisma.DateTimeNullableFilter = {};
+        if (query.dueBefore) dueDateFilter.lte = new Date(query.dueBefore);
+        if (query.dueAfter) dueDateFilter.gte = new Date(query.dueAfter);
+        if (Object.keys(dueDateFilter).length > 0) {
+          where.dueDate = dueDateFilter;
+        }
         if (query.goalId) where.goalId = query.goalId;
         if (query.domainId) where.domainId = query.domainId;
 
@@ -87,7 +92,7 @@ export const todoRoutes: FastifyPluginAsync = async (fastify) => {
         const userId = request.user.userId;
         const data = createTodoSchema.parse(request.body);
 
-        const createData: any = {
+        const createData: Prisma.TodoUncheckedCreateInput = {
           userId,
           title: data.title,
           description: data.description,
@@ -158,7 +163,7 @@ export const todoRoutes: FastifyPluginAsync = async (fastify) => {
           return reply.code(404).send({ error: 'Todo not found' });
         }
 
-        const updateData: any = {};
+        const updateData: Prisma.TodoUncheckedUpdateInput = {};
 
         if (data.title !== undefined) updateData.title = data.title;
         if (data.description !== undefined) updateData.description = data.description;

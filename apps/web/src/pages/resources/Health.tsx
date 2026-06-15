@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState, useMemo, useCallback } from 'react';
 import api from '../../lib/api';
 import { Plus, Activity, Trash2 } from 'lucide-react';
 import { format, subDays } from 'date-fns';
@@ -60,11 +60,7 @@ export default function Health() {
   const [addValue, setAddValue] = useState('');
   const [addNote, setAddNote] = useState('');
 
-  useEffect(() => {
-    loadData();
-  }, [activeType]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     setLoading(true);
     try {
       const to = format(new Date(), 'yyyy-MM-dd');
@@ -80,7 +76,11 @@ export default function Health() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [activeType]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData]);
 
   const handleAdd = async () => {
     const value = parseFloat(addValue);

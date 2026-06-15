@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 import { getPaginationParams, createPaginatedResponse } from '@meos/shared';
 
@@ -245,7 +246,7 @@ export const subscriptionRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.code(404).send({ error: '订阅不存在' });
       }
 
-      const updateData: any = { ...data };
+      const updateData: Prisma.SubscriptionUpdateInput = { ...data };
       if (data.startDate) updateData.startDate = new Date(data.startDate);
       if (data.endDate) updateData.endDate = new Date(data.endDate);
 

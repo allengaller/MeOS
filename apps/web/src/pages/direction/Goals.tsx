@@ -29,14 +29,14 @@ interface Goal {
   updatedAt: string;
 }
 
-interface Domain {
+export interface Domain {
   id: string;
   name: string;
   icon?: string;
   identifier?: string;
 }
 
-interface GoalForm {
+export interface GoalForm {
   title: string;
   domainId: string;
   description: string;

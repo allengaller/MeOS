@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 
 const insightSchema = z.object({
@@ -54,7 +55,7 @@ export const insightRoutes: FastifyPluginAsync = async (fastify) => {
           sortOrder?: 'asc' | 'desc';
         };
 
-        const where: any = { userId };
+        const where: Prisma.InsightNoteWhereInput = { userId };
         if (category) where.category = category;
         if (search) {
           where.OR = [
@@ -64,7 +65,7 @@ export const insightRoutes: FastifyPluginAsync = async (fastify) => {
         }
 
         const skip = (Number(page) - 1) * Number(limit);
-        const orderBy: any = { [sortBy]: sortOrder };
+        const orderBy = { [sortBy]: sortOrder } as Prisma.InsightNoteOrderByWithRelationInput;
 
         const [insights, total] = await Promise.all([
           prisma.insightNote.findMany({

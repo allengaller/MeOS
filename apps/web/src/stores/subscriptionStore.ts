@@ -1,6 +1,11 @@
 import { create } from 'zustand';
 import api from '../lib/api';
 
+function getErrorMessage(error: unknown): string {
+  if (error instanceof Error) return error.message;
+  return String(error);
+}
+
 export interface QuotaUtilization {
   id: string;
   name: string;
@@ -37,7 +42,7 @@ export interface Subscription {
   autoRenew: boolean;
   websiteUrl?: string;
   notes?: string;
-  config?: Record<string, any>;
+  config?: Record<string, unknown>;
   quotas: QuotaDefinition[];
   createdAt: string;
   updatedAt: string;
@@ -115,8 +120,8 @@ export const useSubscriptionStore = create<SubscriptionState>((set, _get) => ({
     try {
       const response = await api.get('/subscriptions');
       set({ subscriptions: response.data.subscriptions, loading: false });
-    } catch (error: any) {
-      set({ error: error.message, loading: false });
+    } catch (error) {
+      set({ error: getErrorMessage(error), loading: false });
     }
   },
 
@@ -129,8 +134,8 @@ export const useSubscriptionStore = create<SubscriptionState>((set, _get) => ({
         currentUsage: response.data.currentUsage,
         loading: false,
       });
-    } catch (error: any) {
-      set({ error: error.message, loading: false });
+    } catch (error) {
+      set({ error: getErrorMessage(error), loading: false });
     }
   },
 
@@ -139,8 +144,8 @@ export const useSubscriptionStore = create<SubscriptionState>((set, _get) => ({
     try {
       const response = await api.get('/subscriptions/dashboard/summary');
       set({ dashboard: response.data, loading: false });
-    } catch (error: any) {
-      set({ error: error.message, loading: false });
+    } catch (error) {
+      set({ error: getErrorMessage(error), loading: false });
     }
   },
 

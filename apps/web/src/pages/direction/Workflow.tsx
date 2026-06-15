@@ -110,23 +110,7 @@ export default function Workflow() {
   const [activeEntityType, setActiveEntityType] = useState<EntityType>('goal');
   const [showEntityPanel, setShowEntityPanel] = useState(true);
 
-  useEffect(() => {
-    loadWorkflows();
-  }, []);
-
-  useEffect(() => {
-    if (selectedWorkflow) {
-      loadWorkflowDetail(selectedWorkflow.id);
-    }
-  }, [selectedWorkflow?.id]);
-
-  useEffect(() => {
-    if (selectedWorkflow) {
-      loadEntities();
-    }
-  }, [activeEntityType]);
-
-  const loadEntities = async () => {
+  const loadEntities = useCallback(async () => {
     try {
       if (activeEntityType === 'vision') {
         const res = await api.get('/visions');
@@ -144,7 +128,7 @@ export default function Workflow() {
     } catch (e) {
       console.error(e);
     }
-  };
+  }, [activeEntityType]);
 
   const loadWorkflows = async () => {
     try {
@@ -157,7 +141,7 @@ export default function Workflow() {
     }
   };
 
-  const loadWorkflowDetail = async (id: string) => {
+  const loadWorkflowDetail = useCallback(async (id: string) => {
     try {
       const res = await api.get(`/workflows/${id}`);
       const wf = res.data?.workflow;
@@ -168,7 +152,23 @@ export default function Workflow() {
     } catch (e) {
       console.error(e);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    loadWorkflows();
+  }, []);
+
+  useEffect(() => {
+    if (selectedWorkflow) {
+      loadWorkflowDetail(selectedWorkflow.id);
+    }
+  }, [selectedWorkflow, loadWorkflowDetail]);
+
+  useEffect(() => {
+    if (selectedWorkflow) {
+      loadEntities();
+    }
+  }, [selectedWorkflow, loadEntities]);
 
   const toNodes = (steps: WorkflowStep[], connections: WorkflowConnection[]) => {
     const ns: Node[] = steps.map(s => ({
@@ -485,22 +485,23 @@ export default function Workflow() {
   );
 }
 
-function applyNodeChanges(changes: any[], nodes: Node[]): Node[] {
-  return changes.reduce((acc, change) => {
+function applyNodeChanges(changes: NodeChange<Node>[], nodes: Node[]): Node[] {
+  return changes.reduce<Node[]>((acc, change) => {
     if (change.type === 'position' && change.position) {
-      return acc.map((n: Node) => n.id === change.id ? { ...n, position: change.position } : n);
+      const position = change.position;
+      return acc.map((n) => (n.id === change.id ? { ...n, position } : n));
     }
     if (change.type === 'remove') {
-      return acc.filter((n: Node) => n.id !== change.id);
+      return acc.filter((n) => n.id !== change.id);
     }
     return acc;
   }, nodes);
 }
 
-function applyEdgeChanges(_changes: any[], edges: Edge[]): Edge[] {
+function applyEdgeChanges(_changes: EdgeChange<Edge>[], edges: Edge[]): Edge[] {
   return edges;
 }
 
-function addEdge(edge: any, edges: Edge[]): Edge[] {
+function addEdge(edge: Edge, edges: Edge[]): Edge[] {
   return [...edges, edge];
 }

@@ -17,8 +17,6 @@ const updateMindsetSchema = z.object({
 });
 
 export const mindsetRoutes: FastifyPluginAsync = async (fastify) => {
-  const isDev = process.env.NODE_ENV !== 'production';
-
   // 获取用户所有心态格言
   fastify.get('/', {
     onRequest: [fastify.authenticate],

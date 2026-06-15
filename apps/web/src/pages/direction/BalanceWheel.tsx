@@ -2,8 +2,14 @@ import { useEffect, useState } from 'react';
 import { RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, ResponsiveContainer } from 'recharts';
 import api from '../../lib/api';
 
+interface Domain {
+  id: string;
+  name: string;
+  icon: string;
+}
+
 export default function BalanceWheel() {
-  const [domains, setDomains] = useState<any[]>([]);
+  const [domains, setDomains] = useState<Domain[]>([]);
   const [scores, setScores] = useState<Record<string, number>>({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -17,7 +23,7 @@ export default function BalanceWheel() {
       const response = await api.get('/domains');
       setDomains(response.data.domains);
       const initialScores: Record<string, number> = {};
-      response.data.domains.forEach((d: any) => {
+      response.data.domains.forEach((d: Domain) => {
         initialScores[d.id] = 5;
       });
       setScores(initialScores);

@@ -1,5 +1,4 @@
 import Fastify from 'fastify';
-import type { FastifyPluginAsync } from 'fastify';
 import cors from '@fastify/cors';
 import jwt from '@fastify/jwt';
 import swagger from '@fastify/swagger';
@@ -66,7 +65,7 @@ server.decorate('authenticate', async function (request, reply) {
   }
   try {
     await request.jwtVerify();
-  } catch (_err) {
+  } catch {
     return reply.code(401).send({ error: '认证失败' });
   }
 });
@@ -116,7 +115,7 @@ const start = async () => {
   try {
     const port = Number(process.env.PORT) || 3001;
     await server.listen({ port, host: '0.0.0.0' });
-    console.log(`Server running at http://localhost:${port}`);
+    server.log.info(`Server running at http://localhost:${port}`);
   } catch (err) {
     server.log.error(err);
     process.exit(1);

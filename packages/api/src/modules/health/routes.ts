@@ -1,5 +1,6 @@
 import type { FastifyPluginAsync } from 'fastify';
 import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma.js';
 
 const healthTypes = ['sleep', 'exercise', 'weight', 'mood', 'energy', 'water', 'custom'] as const;
@@ -84,7 +85,7 @@ export const healthRoutes: FastifyPluginAsync = async (fastify) => {
       const sevenDaysAgo = new Date();
       sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-      const where: any = { userId };
+      const where: Prisma.HealthRecordWhereInput = { userId };
       if (query.type) where.type = query.type;
       where.recordedAt = { gte: query.from || sevenDaysAgo };
       if (query.to) {

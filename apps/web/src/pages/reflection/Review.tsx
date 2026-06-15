@@ -106,10 +106,6 @@ export default function Review() {
     setPeriodOffset(0);
   }, [period]);
 
-  useEffect(() => {
-    findMatchingReview();
-  }, [period, periodOffset, reviews]);
-
   const loadReviews = useCallback(async () => {
     try {
       const res = await api.get('/reviews');
@@ -125,7 +121,7 @@ export default function Review() {
     loadReviews();
   }, [loadReviews]);
 
-  const findMatchingReview = () => {
+  useEffect(() => {
     const match = reviews.find((r) => {
       return r.period === period && format(new Date(r.startDate), 'yyyy-MM-dd') === startDate;
     });
@@ -143,7 +139,7 @@ export default function Review() {
       setInsights('');
       setNextFocus([]);
     }
-  };
+  }, [period, periodOffset, reviews, startDate]);
 
   const addItem = (list: string[], setList: (v: string[]) => void, input: string, setInput: (v: string) => void) => {
     const trimmed = input.trim();
