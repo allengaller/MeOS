@@ -37,25 +37,26 @@ MeOS/
 ├── packages/
 │   ├── api/               # 后端API服务
 │   │   ├── src/
-│   │   │   ├── modules/  # 业务模块
+│   │   │   ├── modules/  # 业务模块（按五维分组）
+│   │   │   ├── prisma/   # 数据库模型（schema.prisma）
 │   │   │   ├── lib/     # 工具库
 │   │   │   └── server.ts
-│   │   ├── prisma/      # 数据库模型
 │   │   └── package.json
 │   └── shared/           # 共享类型和工具
 │       └── src/
 ├── apps/
-│   ├── web/              # Web前端应用
+│   ├── web/              # Web前端应用（主端）
 │   │   ├── src/
 │   │   │   ├── components/
 │   │   │   ├── pages/
 │   │   │   ├── hooks/
 │   │   │   └── stores/
 │   │   └── package.json
-│   ├── chrome-extension/ # Chrome 扩展
-│   └── mac-app/         # Mac 应用 (规划中)
+│   └── chrome-extension/ # Chrome 扩展
 └── package.json
 ```
+
+> 多端规划（Mac 应用 / 微信小程序 / CLI）见下方[路线图](#路线图)，未实现前不在仓库中保留空占位目录。
 
 ## 开始使用
 
@@ -152,6 +153,7 @@ pnpm install --force
 - **阶段二** - 多方法论整合
 - **阶段三** - 智能化与生态
 - **阶段四** - 持续优化与商业化
+- **多端扩展（规划中）** - Mac 原生应用、微信小程序、CLI
 
 ## 设计文档
 

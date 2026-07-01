@@ -64,7 +64,7 @@ pnpm db:push
 
 ### 开发环境跳过认证
 
-在开发模式下，API 会自动使用 mock 用户，便于快速调试。
+在开发模式下（`NODE_ENV=development` 或显式设置 `MEOS_DEV_AUTH=true`），API 会自动使用 mock 用户（`mock-user-1`），便于快速调试。**生产环境必须设置 `JWT_SECRET` 环境变量**，否则服务将拒绝启动。
 
 ## 主要功能
 

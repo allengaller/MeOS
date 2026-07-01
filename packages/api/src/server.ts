@@ -53,13 +53,32 @@ await server.register(swaggerUi, {
   routePrefix: '/docs',
 });
 
-await server.register(jwt, {
-  secret: process.env.JWT_SECRET || 'meos-super-secret-key-change-in-production',
-});
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('JWT_SECRET 环境变量未设置：生产环境必须配置强密钥');
+    }
+    server.log.warn('⚠️  JWT_SECRET 未设置，使用开发环境默认密钥，请勿在生产环境使用');
+    return 'meos-dev-insecure-secret-change-me';
+  }
+  if (secret.length < 16 && process.env.NODE_ENV === 'production') {
+    throw new Error('JWT_SECRET 长度过短：生产环境密钥至少 16 个字符');
+  }
+  return secret;
+}
 
-const isDev = process.env.NODE_ENV === 'development';
+await server.register(jwt, { secret: getJwtSecret() });
+
+// 开发认证旁路：仅在显式开启或开发环境下生效，避免误部署导致鉴权失效
+const devAuthBypass =
+  process.env.MEOS_DEV_AUTH === 'true' || process.env.NODE_ENV === 'development';
+if (devAuthBypass) {
+  server.log.warn('⚠️  开发认证旁路已启用：所有请求将以 mock-user-1 身份访问，请勿用于生产环境');
+}
+
 server.decorate('authenticate', async function (request, reply) {
-  if (isDev) {
+  if (devAuthBypass) {
     request.user = { userId: 'mock-user-1' };
     return;
   }
